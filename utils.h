@@ -8,8 +8,11 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-float ** calculateCov(float *x, float *y, float xm, float ym) {
-	int length = x.length;
+#include <math.h>
+
+#define length(a) ( sizeof ( a ) / sizeof ( *a ) )
+
+float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 	float ** returnArray = new float*[2];
 	for(int i = 0; i<2; i++) {
 		returnArray[i] = new float[2];
