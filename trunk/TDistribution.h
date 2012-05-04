@@ -10,6 +10,7 @@
 
 #include "Sample.h"
 #include <vector>
+#include "utils.h"
 
 class TDistribution {
 public:
@@ -18,14 +19,15 @@ public:
 	void setDegreeOfFreedom(float d);
 	void addNewSample(Sample sample);
 	void removeSampleWithName(string name);
+	void calculateData();
+	float calculateProb(float x, float y);
+	float * calculateProbArray(float *x, float *y);
 private:
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix
 	float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix
 	float * locParam;
 	vector<Sample> samples;
-
-	void calculateLocParam();
 };
 
 #endif /* TDISTRIBUTION_H_ */
