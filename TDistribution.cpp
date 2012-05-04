@@ -8,7 +8,6 @@
 #include "TDistribution.h"
 
 TDistribution::TDistribution() {
-	// TODO Auto-generated constructor stub
 	dof = 0;
 	determinant = 0;
 	cor = new float*[2];
@@ -31,7 +30,6 @@ TDistribution::TDistribution() {
 }
 
 TDistribution::~TDistribution() {
-	// TODO Auto-generated destructor stub
 	for(int i=0; i<2; i++) {
 		delete[] cor[i];
 		delete[] cov[i];

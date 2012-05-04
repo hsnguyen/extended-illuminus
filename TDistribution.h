@@ -26,8 +26,8 @@ private:
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix
 	float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix
-	float * locParam;
-	vector<Sample> samples;
+	float * locParam; // location parameters
+	vector<Sample> samples; // list of samples
 };
 
 #endif /* TDISTRIBUTION_H_ */

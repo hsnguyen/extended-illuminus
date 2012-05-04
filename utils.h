@@ -1,6 +1,6 @@
 /*
  * utils.h
- *
+ *	some simple matrices
  *  Created on: May 4, 2012
  *      Author: nhatuan
  */
@@ -10,8 +10,12 @@
 
 #include <math.h>
 
+// length of an array
 #define length(a) ( sizeof ( a ) / sizeof ( *a ) )
 
+/**
+ * calculate the covariance matrix
+ */
 float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 	float ** returnArray = new float*[2];
 	for(int i = 0; i<2; i++) {
@@ -37,6 +41,9 @@ float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 	return returnArray;
 }
 
+/**
+ * calculate correlation matrix from covariance matrix
+ */
 float ** calculateCor(float ** cov) {
 	float a = sqrt(cov[0][0]);
 	float b = sqrt(cov[1][1]);
@@ -57,10 +64,17 @@ float ** calculateCor(float ** cov) {
 	return returnArray;
 }
 
+/**
+ * calculate determinant of a matrix
+ */
 float calculateDet(float ** mat) {
 	return (float) mat[0][0] * mat[1][1] - mat[0][1] * mat[1][0];
 }
 
+
+/**
+ * calculate inverse of a matrix
+ */
 float ** calculateInv(float ** mat) {
 	float ** returnArray = new float*[2];
 	for(int i = 0; i<2; i++) {
