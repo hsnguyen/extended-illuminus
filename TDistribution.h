@@ -8,9 +8,12 @@
 #ifndef TDISTRIBUTION_H_
 #define TDISTRIBUTION_H_
 
+#include <fstream>
 #include "Sample.h"
 #include <vector>
 #include "utils.h"
+#include <stdio.h>
+
 
 class TDistribution {
 public:
@@ -22,6 +25,8 @@ public:
 	void calculateData();
 	float calculateProb(float x, float y);
 	float * calculateProbArray(float *x, float *y);
+	string toString();
+	void toFile(string fileName);
 private:
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix

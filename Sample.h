@@ -18,13 +18,15 @@ public:
 	virtual ~Sample();
 	void setName(string _name);
 	void setIntensities(float x, float y);
+	void setClusterIndex(int index);
 	float getXIntensity();
 	float getYIntensity();
 	string getName();
+	int getClusterIndex();
 private:
 	string name;
 	float xIntensity, yIntensity;
-
+	int clusterIndex; // 0: AA, 1: AB, 2: BB, 3: NULL
 };
 
 #endif /* SAMPLE_H_ */

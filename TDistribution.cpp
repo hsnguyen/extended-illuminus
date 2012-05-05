@@ -67,6 +67,8 @@ void TDistribution::calculateData() {
 		float *y = new float[samples.size()];
 		float xTotal = 0, yTotal = 0;
 
+		if (samples.size() < 4) throw "too less samples";
+
 		for(unsigned int i=0; i<samples.size(); i++) {
 			x[i] = samples[i].getXIntensity();
 			y[i] = samples[i].getYIntensity();
@@ -82,6 +84,10 @@ void TDistribution::calculateData() {
 		cor = calculateCor(cov);
 		inv = calculateInv(cor);
 		determinant = calculateDet(inv);
+		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
+		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
+		//printf("cor: %f %f %f %f\n", cor[0][0], cor[0][1], cor[1][0], cor[1][1]);
+		//printf("inv: %f %f %f %f\n", inv[0][0], inv[0][1], inv[1][0], inv[1][1]);
 	} catch(...) {
 		determinant = 0;
 		for(int i=0; i<2; i++) {
@@ -127,4 +133,22 @@ float * TDistribution::calculateProbArray(float *x, float *y) {
 	}
 
 	return returnArray;
+}
+
+string TDistribution::toString() {
+	char output[1000];
+
+	sprintf(output, "numberOfSamples: %d, degreeOfFreedom: %.2f, locationParams: (%.2f, %.2f), determinant: %.3f",
+			samples.size(), dof, locParam[0], locParam[1], determinant);
+
+	return output;
+}
+
+void TDistribution::toFile(string fileName) {
+	ofstream of;
+	of.open(fileName.c_str(), ios::out);
+	for(int i=0; i<samples.size(); i++) {
+		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << "\n";
+	}
+	of.close();
 }

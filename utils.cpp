@@ -20,10 +20,10 @@ float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 	}
 
 	for(int i=0; i<length; i++) {
-		returnArray[0][0] = (x[i]-xm) * (x[i]-xm);
-		returnArray[0][1] = (x[i]-xm) * (y[i]-xm);
-		returnArray[1][0] = (x[i]-xm) * (y[i]-xm);
-		returnArray[1][1] = (y[i]-xm) * (y[i]-xm);
+		returnArray[0][0] += (x[i]-xm) * (x[i]-xm);
+		returnArray[0][1] += (x[i]-xm) * (y[i]-ym);
+		returnArray[1][0] += (x[i]-xm) * (y[i]-ym);
+		returnArray[1][1] += (y[i]-ym) * (y[i]-ym);
 	}
 
 	for(int i = 0; i<2; i++) {
@@ -134,6 +134,19 @@ void transform(float &x, float &y) {
 		y = tmpY;
 	}
 	catch(...) {
+		x = 0;
+		y = 0;
+	}
+}
+
+void deTransform(float &x, float &y) {
+	try {
+		float tmpX = exp(y) * (1 + x) / 2;
+		float tmpY = exp(y) * (1 - x) / 2;
+
+		x = tmpX;
+		y = tmpY;
+	} catch (...) {
 		x = 0;
 		y = 0;
 	}

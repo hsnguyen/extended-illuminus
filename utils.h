@@ -11,6 +11,7 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include <stdio.h>
 
 using namespace std;
 
@@ -50,5 +51,6 @@ vector<string> getHeader(string source);
  */
 
 void transform(float &x, float &y);
+void deTransform(float &x, float &y);
 
 #endif /* UTILS_H_ */

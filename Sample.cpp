@@ -44,3 +44,11 @@ float Sample::getXIntensity() {
 float Sample::getYIntensity() {
 	return yIntensity;
 }
+
+void Sample::setClusterIndex(int index){
+	clusterIndex = index;
+}
+
+int Sample::getClusterIndex() {
+	return clusterIndex;
+}
