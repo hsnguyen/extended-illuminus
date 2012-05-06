@@ -18,6 +18,7 @@
 class TDistribution {
 public:
 	TDistribution();
+	TDistribution(const TDistribution &t);
 	virtual ~TDistribution();
 	void setDegreeOfFreedom(float d);
 	void addNewSample(Sample sample);
@@ -31,6 +32,7 @@ public:
 	bool isEqual(TDistribution t);
 	string toString();
 	void toFile(string fileName);
+	void removeAll();
 
 	float getDeterminant();
 	float ** getCov();
@@ -39,7 +41,6 @@ public:
 	float ** getInv();
 	int getDOF();
 	vector<Sample> getSamples();
-private:
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix
 	float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix

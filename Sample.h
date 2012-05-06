@@ -14,6 +14,7 @@ using namespace std;
 class Sample {
 public:
 	Sample();
+	Sample(const Sample &s);
 	Sample(string _name, float x, float y);
 	virtual ~Sample();
 	void setName(string _name);
@@ -23,7 +24,6 @@ public:
 	float getYIntensity();
 	string getName();
 	int getClusterIndex();
-private:
 	string name;
 	float xIntensity, yIntensity;
 	int clusterIndex; // 0: AA, 1: AB, 2: BB, 3: NULL

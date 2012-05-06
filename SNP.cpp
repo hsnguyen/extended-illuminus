@@ -287,11 +287,89 @@ void SNP::writeToVCF(ofstream &myStream) {
 void SNP::mixtureModel(vector<Sample> sampleList) {
 	initDistributions(sampleList);
 
-	float *preProf = new float[3];
-	for(int i=0; i<3; i++) {
-		printf("number of sample %d: %d\n", i, distributions[i].getNumberOfSamples());
-		preProf[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
-	}
+	int iter = 0;
+	int numSamples = sampleList.size();
 
-	printf("preProb: %f, %f, %f\n", preProf[0], preProf[1], preProf[2]);
+	while (iter < MAX_ITER) {
+		iter ++;
+		printf("================== iteration: %d ==================\n", iter);
+		// calculate preprob
+		TDistribution tmpDist[3];
+		for(int i=0; i<3; i++) {
+			tmpDist[i] = distributions[i];
+			tmpDist[i].removeAll();
+		}
+
+		float *preProbs = new float[3];
+		for(int i=0; i<3; i++) {
+			preProbs[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
+		}
+
+		float *x = new float[numSamples];
+		float *y = new float[numSamples];
+
+		// get x, y
+		for(int i=0; i<numSamples; i++) {
+			x[i] = sampleList[i].getXIntensity();
+			y[i] = sampleList[i].getYIntensity();
+		}
+
+		// assign samples to distribution
+		for(int i=0; i<numSamples; i++) {
+			float aa = preProbs[0] * distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			float bb = preProbs[2] * distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			float ab = preProbs[1] * distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+
+			float confAA = aa / (aa + bb + ab);
+			float confAB = ab / (aa + bb + ab);
+			float confBB = bb / (aa + bb + ab);
+
+			/*
+			printf("AA: %.2f .. %.2f AB: %.2f .. %.2f BB: %.2f .. %.2f TOTAL: %f confAA: %f confAB: %f confBB: %f\n",
+					aa, preProbs[0] * distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
+					ab, preProbs[1] * distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
+					bb, preProbs[2] * distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
+					(aa + ab + bb), confAA, confAB, confBB);
+			*/
+
+			if(confAA >= THRESHOLD) {
+				tmpDist[0].addNewSample(sampleList[i]);
+			}
+			else if (confAB >= THRESHOLD) {
+				tmpDist[1].addNewSample(sampleList[i]);
+			}
+			else if (confBB >= THRESHOLD) {
+				tmpDist[2].addNewSample(sampleList[i]);
+			}
+		}
+
+		// recalculate the three distribution
+		for(int i=0; i<3; i++) {
+			tmpDist[i].updateParams();
+			printf("%s\n", tmpDist[i].toString().c_str());
+		}
+
+		// compare to earlier distribution
+		bool passAA = tmpDist[0].isEqual(distributions[0]);
+		bool passAB = tmpDist[1].isEqual(distributions[1]);
+		bool passBB = tmpDist[2].isEqual(distributions[2]);
+
+		distributions[0] = tmpDist[0];
+		distributions[1] = tmpDist[1];
+		distributions[2] = tmpDist[2];
+
+		//distributions[0].toFile("AA");
+		//distributions[1].toFile("AB");
+		//distributions[2].toFile("BB");
+
+		delete[] x;
+		delete[] y;
+		delete[] preProbs;
+
+		// if all distributions remain the same, break
+		if(passAA && passAB && passBB)
+			break;
+	}
+	printf("==========================================\n");
+	debug();
 }

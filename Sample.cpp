@@ -14,6 +14,17 @@ Sample::Sample() {
 	name = "";
 	xIntensity = 0;
 	yIntensity = 0;
+	clusterIndex = -1;
+}
+
+/**
+ *
+ */
+Sample::Sample(const Sample &s) {
+	name = s.name;
+	xIntensity = s.xIntensity;
+	yIntensity = s.yIntensity;
+	clusterIndex = s.clusterIndex;
 }
 
 /**

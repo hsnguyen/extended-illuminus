@@ -35,35 +35,31 @@ TDistribution::TDistribution() {
 /**
  * copy constructor
  */
-TDistribution::TDistribution(TDistribution t) {
-	dof = t.getDOF();
-	determinant = t.getDeterminant();
+TDistribution::TDistribution(const TDistribution &t) {
+	dof = t.dof;
+	determinant = t.determinant;
 
 	cor = new float*[2];
 	cov = new float*[2];
 	inv = new float*[2];
 	locParam = new float[2];
 
-	float * tLoc = t.getLocParam();
-	float ** tCov = t.getCov();
-	float ** tCor = t.getCor();
-	float ** tInv = t.getInv();
-
 	for(int i=0; i<2; i++) {
 		cor[i] = new float[2];
 		cov[i] = new float[2];
 		inv[i] = new float[2];
 
-		locParam[i] = tLoc[i];
+		locParam[i] = t.locParam[i];
 		for(int j = 0; j<2; j++) {
-			cor[i][j] = tCor[i][j];
-			cov[i][j] = tCov[i][j];
-			inv[i][j] = tInv[i][j];
+			cor[i][j] = t.cor[i][j];
+			cov[i][j] = t.cov[i][j];
+			inv[i][j] = t.inv[i][j];
 		}
 	}
-	vector<Sample> tSamples = t.getSamples();
-	for(unsigned int i=0; i<tSamples.size(); i++) {
-		addNewSample(tSamples[i]);
+	samples.clear();
+	for(unsigned int i=0; i<t.samples.size(); i++) {
+		Sample tmp = t.samples[i];
+		addNewSample(tmp);
 	}
 }
 
@@ -160,7 +156,7 @@ void TDistribution::calculateParams() {
  */
 float TDistribution::calculateProb(float x, float y) {
 	try {
-		float returnVal = sqrt(determinant) / (2 * M_PI);
+		float returnVal = sqrt(determinant) / (2 * PI);
 		float t1 = x - locParam[0];
 		float t2 = y - locParam[1];
 		float inVal = 0;
@@ -211,8 +207,8 @@ string TDistribution::toString() {
 void TDistribution::toFile(string fileName) {
 	ofstream of;
 	of.open(fileName.c_str(), ios::out);
-	for(int i=0; i<samples.size(); i++) {
-		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << "\n";
+	for(unsigned int i=0; i<samples.size(); i++) {
+		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << " " << calculateProb(samples[i].getXIntensity(), samples[i].getYIntensity())<< "\n";
 	}
 	of.close();
 }
@@ -354,4 +350,8 @@ bool TDistribution::isEqual(TDistribution t) {
 	}
 
 	return true;
+}
+
+void TDistribution::removeAll() {
+	samples.clear();
 }
