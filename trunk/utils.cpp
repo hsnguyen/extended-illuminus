@@ -158,7 +158,7 @@ void deTransform(float &x, float &y) {
  * update location parameter with weight for each sample
  */
 float * updateLocParam(float *x, float *y, vector<float> weights) {
-	int length = length(x);
+	int length = weights.size();
 	float totalX = 0;
 	float totalY = 0;
 	float totalW = 0;
@@ -179,7 +179,7 @@ float * updateLocParam(float *x, float *y, vector<float> weights) {
  * update covariance matrix with weight for each sample
  */
 float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight) {
-	int length = length(x);
+	int length = weight.size();
 	float ** returnArray = new float*[2];
 	for(int i = 0; i<2; i++) {
 		returnArray[i] = new float[2];
@@ -187,7 +187,6 @@ float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight)
 			returnArray[i][j] = 0;
 		}
 	}
-
 	for(int i=0; i<length; i++) {
 		returnArray[0][0] += weight[i] * (x[i]-xm) * (x[i]-xm);
 		returnArray[0][1] += weight[i] * (x[i]-xm) * (y[i]-ym);
