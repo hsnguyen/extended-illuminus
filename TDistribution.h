@@ -27,8 +27,18 @@ public:
 	float * calculateProbArray(float *x, float *y);
 	vector<float> calculateWeights();
 	void updateParams();
+	int getNumberOfSamples();
+	bool isEqual(TDistribution t);
 	string toString();
 	void toFile(string fileName);
+
+	float getDeterminant();
+	float ** getCov();
+	float * getLocParam();
+	float ** getCor();
+	float ** getInv();
+	int getDOF();
+	vector<Sample> getSamples();
 private:
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix

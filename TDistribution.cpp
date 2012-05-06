@@ -7,6 +7,9 @@
 
 #include "TDistribution.h"
 
+/**
+ * constructor
+ */
 TDistribution::TDistribution() {
 	dof = 0;
 	determinant = 0;
@@ -29,6 +32,44 @@ TDistribution::TDistribution() {
 	}
 }
 
+/**
+ * copy constructor
+ */
+TDistribution::TDistribution(TDistribution t) {
+	dof = t.getDOF();
+	determinant = t.getDeterminant();
+
+	cor = new float*[2];
+	cov = new float*[2];
+	inv = new float*[2];
+	locParam = new float[2];
+
+	float * tLoc = t.getLocParam();
+	float ** tCov = t.getCov();
+	float ** tCor = t.getCor();
+	float ** tInv = t.getInv();
+
+	for(int i=0; i<2; i++) {
+		cor[i] = new float[2];
+		cov[i] = new float[2];
+		inv[i] = new float[2];
+
+		locParam[i] = tLoc[i];
+		for(int j = 0; j<2; j++) {
+			cor[i][j] = tCor[i][j];
+			cov[i][j] = tCov[i][j];
+			inv[i][j] = tInv[i][j];
+		}
+	}
+	vector<Sample> tSamples = t.getSamples();
+	for(unsigned int i=0; i<tSamples.size(); i++) {
+		addNewSample(tSamples[i]);
+	}
+}
+
+/**
+ * destructor
+ */
 TDistribution::~TDistribution() {
 	for(int i=0; i<2; i++) {
 		delete[] cor[i];
@@ -42,15 +83,23 @@ TDistribution::~TDistribution() {
 	delete [] locParam;
 }
 
-
+/**
+ * set degree of freedom for distribution
+ */
 void TDistribution::setDegreeOfFreedom(float d) {
 	dof = d;
 }
 
+/**
+ * add new sample to distribution
+ */
 void TDistribution::addNewSample(Sample sample) {
 	samples.push_back(sample);
 }
 
+/**
+ * remove a sample from distribution
+ */
 void TDistribution::removeSampleWithName(string name) {
 	for(unsigned int i=0; i<samples.size(); i++) {
 		if(samples[i].getName() == name) {
@@ -60,7 +109,9 @@ void TDistribution::removeSampleWithName(string name) {
 	}
 }
 
-
+/**
+ * calculate the parameters of distribution
+ */
 void TDistribution::calculateParams() {
 	try {
 		float *x = new float[samples.size()];
@@ -88,6 +139,9 @@ void TDistribution::calculateParams() {
 		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
 		//printf("cor: %f %f %f %f\n", cor[0][0], cor[0][1], cor[1][0], cor[1][1]);
 		//printf("inv: %f %f %f %f\n", inv[0][0], inv[0][1], inv[1][0], inv[1][1]);
+
+		delete [] x;
+		delete [] y;
 	} catch(...) {
 		determinant = 0;
 		for(int i=0; i<2; i++) {
@@ -101,7 +155,9 @@ void TDistribution::calculateParams() {
 	}
 }
 
-
+/**
+ * calculate the density of point(x,y)
+ */
 float TDistribution::calculateProb(float x, float y) {
 	try {
 		float returnVal = sqrt(determinant) / (2 * M_PI);
@@ -124,7 +180,9 @@ float TDistribution::calculateProb(float x, float y) {
 	}
 }
 
-
+/**
+ * calculate the density for list of point
+ */
 float * TDistribution::calculateProbArray(float *x, float *y) {
 	float * returnArray = new float[length(x)];
 
@@ -135,6 +193,9 @@ float * TDistribution::calculateProbArray(float *x, float *y) {
 	return returnArray;
 }
 
+/**
+ * for debug, convert distribution's parameters to string
+ */
 string TDistribution::toString() {
 	char output[1000];
 
@@ -144,6 +205,9 @@ string TDistribution::toString() {
 	return output;
 }
 
+/**
+ * write sample data of distribution to file
+ */
 void TDistribution::toFile(string fileName) {
 	ofstream of;
 	of.open(fileName.c_str(), ios::out);
@@ -153,6 +217,9 @@ void TDistribution::toFile(string fileName) {
 	of.close();
 }
 
+/**
+ * calculate the weights for each sample
+ */
 vector<float> TDistribution::calculateWeights() {
 	vector<float> returnVec;
 	for(unsigned int i=0; i<samples.size(); i++) {
@@ -174,6 +241,9 @@ vector<float> TDistribution::calculateWeights() {
 	return returnVec;
 }
 
+/**
+ * update parameters with weights for each sample
+ */
 void TDistribution::updateParams() {
 	try {
 		float *x = new float[samples.size()];
@@ -193,6 +263,9 @@ void TDistribution::updateParams() {
 		cor = calculateCor(cov);
 		inv = calculateInv(cor);
 		determinant = calculateDet(inv);
+
+		delete [] x;
+		delete [] y;
 	}
 	catch (...) {
 		determinant = 0;
@@ -205,4 +278,80 @@ void TDistribution::updateParams() {
 			}
 		}
 	}
+}
+
+/**
+ * get number of samples in distribution
+ */
+int TDistribution::getNumberOfSamples() {
+	return samples.size();
+}
+
+/**
+ * get the determinant
+ */
+float TDistribution::getDeterminant() {
+	return determinant;
+}
+
+/**
+ * get the location parameter
+ */
+float * TDistribution::getLocParam() {
+	return locParam;
+}
+
+/**
+ * get the covariance matrix
+ */
+float ** TDistribution::getCov() {
+	return cov;
+}
+
+/**
+ * get the correlation matrix
+ */
+float ** TDistribution::getCor() {
+	return cor;
+}
+
+/**
+ * get the inverse matrix of correlation matrix
+ */
+float ** TDistribution::getInv() {
+	return inv;
+}
+
+/**
+ * get degree of freedom
+ */
+int TDistribution::getDOF() {
+	return dof;
+}
+
+/**
+ * get list of samples
+ */
+vector<Sample> TDistribution::getSamples() {
+	return samples;
+}
+
+/**
+ * compare two distributions
+ */
+bool TDistribution::isEqual(TDistribution t) {
+	if(getNumberOfSamples() != t.getNumberOfSamples()) return false;
+	if(getDeterminant() != t.getDeterminant()) return false;
+
+	float * tLoc = t.getLocParam();
+	float ** tCov = t.getCov();
+
+	for(int i=0; i<2; i++) {
+		if(locParam[i] != tLoc[i]) return false;
+		for(int j=0; j<2; j++) {
+			if(cov[i][j] != tCov[i][j]) return false;
+		}
+	}
+
+	return true;
 }

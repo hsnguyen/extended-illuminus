@@ -7,6 +7,9 @@
 
 #include "SNP.h"
 
+/**
+ * constructor
+ */
 SNP::SNP() {
 	name = "";
 	distributions = new TDistribution[3];
@@ -21,6 +24,9 @@ SNP::SNP() {
 	numberOfGoodSample = -1;
 }
 
+/**
+ * destructor
+ */
 SNP::~SNP() {
 	for(unsigned int i=0; i<samples.size(); i++) {
 		delete [] confScores[i];
@@ -29,13 +35,20 @@ SNP::~SNP() {
 	delete [] distributions;
 }
 
+/**
+ * set SNP id
+ */
 void SNP::setName(string _name) {
 	name = _name;
 }
 
+/**
+ * get id
+ */
 string SNP::getName() {
 	return name;
 }
+
 
 void SNP::setChrom(string _ch) {
 	chrom = _ch;
@@ -77,26 +90,35 @@ string SNP::getInfo() {
 	return info;
 }
 
+/**
+ * get number of samples
+ */
 int SNP::getNumberOfSamples() {
 	return header.size();
 }
 
+/**
+ * set number of good samples in the given data
+ */
 void SNP::setNumOfGoodSamples(int num) {
 	numberOfGoodSample = num;
 }
 
+/**
+ * assign data for SNP
+ */
 void SNP::assignData(string lineString, vector<string> _header) {
 	header = _header;
 	vector<string> lineData = split(lineString, '\t');
 	int indexXY = -1;
 	int length = lineData.size();
 
-	setChrom(lineData[0]);
-	setPos(lineData[1]);
+	setChrom(lineData[0]); // chromosome
+	setPos(lineData[1]); // position
 	setName(lineData[2]); // name of SNP
-	setRef(lineData[3]);
-	setAlt(lineData[4]);
-	setInfo(lineData[7]);
+	setRef(lineData[3]); // reference nucleotide
+	setAlt(lineData[4]); // alternative nucleotide
+	setInfo(lineData[7]); // further information
 
 
 	// get index of xy intensities
@@ -116,6 +138,7 @@ void SNP::assignData(string lineString, vector<string> _header) {
 		float x = atof(xy[0].c_str());
 		float y = atof(xy[1].c_str());
 
+		// all sample data with below constraints are missing data
 		if (isnan(x) || isnan(y) || isinf(x) || isinf(y) || (x == 0 && y == 0)) {
 			addToMissing(x, y, header[i-9]);
 		}
@@ -136,20 +159,28 @@ void SNP::assignData(string lineString, vector<string> _header) {
 
 	// init distribution
 	vector<Sample> tmpVec = getGoodData();
-	initDistributions(tmpVec);
+	mixtureModel(tmpVec);
 }
 
-
+/**
+ * add new sample to SNP
+ */
 void SNP::addNewSample(float x, float y, string name) {
 	Sample sample(name, x, y);
 	samples.push_back(sample);
 }
 
+/**
+ * add new missing sample to SNP
+ */
 void SNP::addToMissing(float x, float y, string name) {
 	Sample sample(name, x, y);
 	missing.push_back(sample);
 }
 
+/**
+ * convert SNP data to string
+ */
 string SNP::toString() {
 	unsigned int length = header.size();
 	string output = "";
@@ -182,6 +213,11 @@ string SNP::toString() {
 	return output;
 }
 
+/**
+ * initialize three student distributions with a list of samples
+ * from the given samples in the list, divide them into three distribution by their contrasts
+ * calculate the parameters for each distribution at the end of process
+ */
 void SNP::initDistributions(vector<Sample> initSample) {
 	float minContrast = 100;
 	float maxContrast = -100;
@@ -194,7 +230,6 @@ void SNP::initDistributions(vector<Sample> initSample) {
 			maxContrast = initSample[i].getXIntensity();
 		}
 	}
-	//printf("min: %f;  max: %f \n", minContrast, maxContrast);
 	float spliter1 = minContrast + (maxContrast - minContrast) / 3;
 	float spliter2 = minContrast + (maxContrast - minContrast) * 2 / 3;
 
@@ -222,6 +257,10 @@ void SNP::debug() {
 	}
 }
 
+/**
+ * get the list of good sample data from given data
+ * all good samples must be placed before bad samples in the given data
+ */
 vector<Sample> SNP::getGoodData() {
 	if(numberOfGoodSample == -1 || numberOfGoodSample > header.size()) return samples;
 	vector<Sample> returnData;
@@ -235,6 +274,24 @@ vector<Sample> SNP::getGoodData() {
 	return returnData;
 }
 
+/**
+ * write the SNP data to stream
+ */
 void SNP::writeToVCF(ofstream &myStream) {
 	myStream << toString();
+}
+
+/**
+ * using mixture model algorithm to cluster the sample in sampleList into three clusters
+ */
+void SNP::mixtureModel(vector<Sample> sampleList) {
+	initDistributions(sampleList);
+
+	float *preProf = new float[3];
+	for(int i=0; i<3; i++) {
+		printf("number of sample %d: %d\n", i, distributions[i].getNumberOfSamples());
+		preProf[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
+	}
+
+	printf("preProb: %f, %f, %f\n", preProf[0], preProf[1], preProf[2]);
 }
