@@ -151,3 +151,47 @@ void deTransform(float &x, float &y) {
 		y = 0;
 	}
 }
+
+float * updateLocParam(float *x, float *y, vector<float> weights) {
+	int length = length(x);
+	float totalX = 0;
+	float totalY = 0;
+	float totalW = 0;
+	for(int i=0; i<length; i++) {
+		totalX += weights[i] * x[i];
+		totalY += weights[i] * y[i];
+		totalW += weights[i];
+	}
+
+	float *returnParam = new float[2];
+	returnParam[0] = totalX / totalW;
+	returnParam[1] = totalY / totalW;
+
+	return returnParam;
+}
+
+float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight) {
+	int length = length(x);
+	float ** returnArray = new float*[2];
+	for(int i = 0; i<2; i++) {
+		returnArray[i] = new float[2];
+		for(int j=0; j<2; j++) {
+			returnArray[i][j] = 0;
+		}
+	}
+
+	for(int i=0; i<length; i++) {
+		returnArray[0][0] += weight[i] * (x[i]-xm) * (x[i]-xm);
+		returnArray[0][1] += weight[i] * (x[i]-xm) * (y[i]-ym);
+		returnArray[1][0] += weight[i] * (x[i]-xm) * (y[i]-ym);
+		returnArray[1][1] += weight[i] * (y[i]-ym) * (y[i]-ym);
+	}
+
+	for(int i = 0; i<2; i++) {
+		for(int j=0; j<2; j++) {
+			returnArray[i][j] /= (length - 1);
+		}
+	}
+
+	return returnArray;
+}

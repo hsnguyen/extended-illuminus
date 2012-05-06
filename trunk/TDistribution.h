@@ -22,9 +22,11 @@ public:
 	void setDegreeOfFreedom(float d);
 	void addNewSample(Sample sample);
 	void removeSampleWithName(string name);
-	void calculateData();
+	void calculateParams();
 	float calculateProb(float x, float y);
 	float * calculateProbArray(float *x, float *y);
+	vector<float> calculateWeights();
+	void updateParams();
 	string toString();
 	void toFile(string fileName);
 private:

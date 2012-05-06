@@ -212,10 +212,8 @@ void SNP::initDistributions(vector<Sample> initSample) {
 	}
 
 	for(int i=0; i<3; i++) {
-		distributions[i].calculateData();
-		//distributions[i].toFile("testData");
+		distributions[i].calculateParams();
 	}
-	//debug();
 }
 
 void SNP::debug() {

@@ -61,7 +61,7 @@ void TDistribution::removeSampleWithName(string name) {
 }
 
 
-void TDistribution::calculateData() {
+void TDistribution::calculateParams() {
 	try {
 		float *x = new float[samples.size()];
 		float *y = new float[samples.size()];
@@ -151,4 +151,58 @@ void TDistribution::toFile(string fileName) {
 		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << "\n";
 	}
 	of.close();
+}
+
+vector<float> TDistribution::calculateWeights() {
+	vector<float> returnVec;
+	for(unsigned int i=0; i<samples.size(); i++) {
+		int x = samples[i].getXIntensity();
+		int y = samples[i].getYIntensity();
+		int t1 = x - locParam[0];
+		int t2 = y - locParam[1];
+
+		float inVal = 0;
+		inVal += inv[0][0] * t1 * t1;
+		inVal += inv[1][1] * t2 * t2;
+		inVal += inv[1][0] * t1 * t2;
+		inVal += inv[0][1] * t1 * t2;
+
+		float wi = (dof + 2) / (dof + inVal);
+		returnVec.push_back(wi);
+	}
+
+	return returnVec;
+}
+
+void TDistribution::updateParams() {
+	try {
+		float *x = new float[samples.size()];
+		float *y = new float[samples.size()];
+
+		if (samples.size() < 4) throw "too less samples";
+
+		vector<float> weights = calculateWeights();
+
+		for(unsigned int i=0; i<samples.size(); i++) {
+			x[i] = samples[i].getXIntensity();
+			y[i] = samples[i].getYIntensity();
+		}
+
+		locParam = updateLocParam(x, y, weights);
+		cov = updateCov(x, y, locParam[0], locParam[1], weights);
+		cor = calculateCor(cov);
+		inv = calculateInv(cor);
+		determinant = calculateDet(inv);
+	}
+	catch (...) {
+		determinant = 0;
+		for(int i=0; i<2; i++) {
+			locParam[i] = 0;
+			for(int j=0; j<2; j++) {
+				cov[i][j] = 0;
+				cor[i][j] = 0;
+				inv[i][j] = 0;
+			}
+		}
+	}
 }

@@ -47,10 +47,20 @@ vector<string> split(string source, char delim);
 vector<string> getHeader(string source);
 
 /**
+ * update location parameter with weights
+ */
+float * updateLocParam(float *x, float *y, vector<float> weight);
+/**
+ * update covariance matrix with weights
+ */
+float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight);
+/**
  * transform from x,y intensities to strength and contrast
  */
-
 void transform(float &x, float &y);
+/**
+ * transform strength and contrast to x,y intensities
+ */
 void deTransform(float &x, float &y);
 
 #endif /* UTILS_H_ */
