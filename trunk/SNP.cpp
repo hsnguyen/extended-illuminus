@@ -293,6 +293,7 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 	while (iter < MAX_ITER) {
 		iter ++;
 		printf("================== iteration: %d ==================\n", iter);
+		printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
 		// calculate preprob
 		TDistribution tmpDist[3];
 		for(int i=0; i<3; i++) {
@@ -316,9 +317,9 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 
 		// assign samples to distribution
 		for(int i=0; i<numSamples; i++) {
-			float aa = preProbs[0] * distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
-			float bb = preProbs[2] * distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
-			float ab = preProbs[1] * distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			float aa = distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			float bb = distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			float ab = distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
 
 			float confAA = aa / (aa + bb + ab);
 			float confAB = ab / (aa + bb + ab);
@@ -332,13 +333,13 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 					(aa + ab + bb), confAA, confAB, confBB);
 			*/
 
-			if(confAA >= THRESHOLD) {
+			if(confAA >= confAB && confAA >= confBB) {
 				tmpDist[0].addNewSample(sampleList[i]);
 			}
-			else if (confAB >= THRESHOLD) {
+			else if (confAB >= confBB && confAB >= confAA) {
 				tmpDist[1].addNewSample(sampleList[i]);
 			}
-			else if (confBB >= THRESHOLD) {
+			else if (confBB >= confAA && confBB >= confAB) {
 				tmpDist[2].addNewSample(sampleList[i]);
 			}
 		}
@@ -354,9 +355,11 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 		bool passAB = tmpDist[1].isEqual(distributions[1]);
 		bool passBB = tmpDist[2].isEqual(distributions[2]);
 
+		printf("tmpDist0: %f %f %f %f\n", tmpDist[0].inv[0][0], tmpDist[0].inv[0][1], tmpDist[0].inv[1][0], tmpDist[0].inv[1][1]);
 		distributions[0] = tmpDist[0];
 		distributions[1] = tmpDist[1];
 		distributions[2] = tmpDist[2];
+		printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
 
 		//distributions[0].toFile("AA");
 		//distributions[1].toFile("AB");
