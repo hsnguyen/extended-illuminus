@@ -13,6 +13,7 @@ using namespace std;
 
 
 string fileName = "trunk/Data/header.vcf";
+string outputFile = "test.vcf";
 
 void readVCF(string fileName) {
 	ifstream myFile;
@@ -38,8 +39,6 @@ void readVCF(string fileName) {
 			SNP tmpSNP;
 			tmpSNP.setNumOfGoodSamples(2228);
 			tmpSNP.assignData(line, sampleNames);
-			//cout << tmpSNP.toString() << endl;
-			cout << tmpSNP.getNumberOfSamples() << endl;
 			count ++;
 			if(count == 2) break;
 		}

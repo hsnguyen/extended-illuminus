@@ -6,6 +6,7 @@
  */
 
 #include "TDistribution.h"
+#include <cstring>
 
 /**
  * constructor
@@ -36,6 +37,7 @@ TDistribution::TDistribution() {
  * copy constructor
  */
 TDistribution::TDistribution(const TDistribution &t) {
+	printf("COPY CONSTRUCTOR IS CALLED\n");
 	dof = t.dof;
 	determinant = t.determinant;
 
@@ -55,7 +57,12 @@ TDistribution::TDistribution(const TDistribution &t) {
 			cov[i][j] = t.cov[i][j];
 			inv[i][j] = t.inv[i][j];
 		}
+
 	}
+	//memcpy(locParam, t.locParam, sizeof(t.locParam));
+	//memcpy(cor, t.cor, sizeof(t.cor));
+	//memcpy(cov, t.cov, sizeof(t.cov));
+	//memcpy(inv, t.inv, sizeof(t.inv));
 	samples.clear();
 	for(unsigned int i=0; i<t.samples.size(); i++) {
 		Sample tmp = t.samples[i];
@@ -67,6 +74,7 @@ TDistribution::TDistribution(const TDistribution &t) {
  * destructor
  */
 TDistribution::~TDistribution() {
+	/*
 	for(int i=0; i<2; i++) {
 		delete[] cor[i];
 		delete[] cov[i];
@@ -77,6 +85,7 @@ TDistribution::~TDistribution() {
 	delete [] cov;
 	delete [] inv;
 	delete [] locParam;
+	*/
 }
 
 /**
