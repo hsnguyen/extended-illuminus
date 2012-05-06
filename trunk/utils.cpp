@@ -125,7 +125,6 @@ vector<string> getHeader(string source) {
 /**
  * transform from x,y intensities to strength and contrast
  */
-
 void transform(float &x, float &y) {
 	try {
 		float tmpX = (x - y) / (x + y);
@@ -139,6 +138,9 @@ void transform(float &x, float &y) {
 	}
 }
 
+/**
+ * transform contrast and strength to x,y intensities
+ */
 void deTransform(float &x, float &y) {
 	try {
 		float tmpX = exp(y) * (1 + x) / 2;
@@ -152,6 +154,9 @@ void deTransform(float &x, float &y) {
 	}
 }
 
+/**
+ * update location parameter with weight for each sample
+ */
 float * updateLocParam(float *x, float *y, vector<float> weights) {
 	int length = length(x);
 	float totalX = 0;
@@ -170,6 +175,9 @@ float * updateLocParam(float *x, float *y, vector<float> weights) {
 	return returnParam;
 }
 
+/**
+ * update covariance matrix with weight for each sample
+ */
 float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight) {
 	int length = length(x);
 	float ** returnArray = new float*[2];
