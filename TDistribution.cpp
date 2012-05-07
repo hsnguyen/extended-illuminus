@@ -123,7 +123,18 @@ void TDistribution::calculateParams() {
 		float *y = new float[samples.size()];
 		float xTotal = 0, yTotal = 0;
 
-		if (samples.size() < 4) throw "too less samples";
+		if (samples.empty()) {
+			determinant = 0;
+			for(int i=0; i<2; i++) {
+				locParam[i] = 0;
+				for(int j=0; j<2; j++) {
+					cov[i][j] = 0;
+					cor[i][j] = 0;
+					inv[i][j] = 0;
+				}
+			}
+			return;
+		}
 
 		for(unsigned int i=0; i<samples.size(); i++) {
 			x[i] = samples[i].getXIntensity();
@@ -135,6 +146,8 @@ void TDistribution::calculateParams() {
 
 		locParam[0] = xTotal / samples.size();
 		locParam[1] = yTotal / samples.size();
+
+		if (samples.size() < 4) throw "too less samples";
 
 		cov = calculateCov(x, y, locParam[0], locParam[1], samples.size());
 		cor = calculateCor(cov);
@@ -148,15 +161,12 @@ void TDistribution::calculateParams() {
 		delete [] x;
 		delete [] y;
 	} catch(...) {
-		determinant = 0;
-		for(int i=0; i<2; i++) {
-			locParam[i] = 0;
-			for(int j=0; j<2; j++) {
-				cov[i][j] = 0;
-				cor[i][j] = 0;
-				inv[i][j] = 0;
-			}
-		}
+		cov[0][0] = 0.05;
+		cov[0][1] = cov[1][0] = 0.00;
+		cov[1][1] = 0.17;
+		cor = calculateCor(cov);
+		inv = calculateInv(cor);
+		determinant = calculateDet(inv);
 	}
 }
 
@@ -234,6 +244,7 @@ void TDistribution::toFile(string fileName) {
 	for(unsigned int i=0; i<samples.size(); i++) {
 		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << " " << calculateProb(samples[i].getXIntensity(), samples[i].getYIntensity())<< "\n";
 	}
+	of << locParam[0] << " " << locParam[1] << " " << calculateProb(locParam[0], locParam[1]) << "\n";
 	of.close();
 }
 
@@ -296,6 +307,7 @@ void TDistribution::updateParams() {
 		float *x = new float[samples.size()];
 		float *y = new float[samples.size()];
 
+
 		if (samples.size() < 4) throw "too less samples";
 
 		vector<float> weights = calculateWeights();
@@ -310,20 +322,24 @@ void TDistribution::updateParams() {
 		cor = calculateCor(cov);
 		inv = calculateInv(cor);
 		determinant = calculateDet(inv);
+		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
+		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
+		//printf("cor: %f %f %f %f\n", cor[0][0], cor[0][1], cor[1][0], cor[1][1]);
+		//printf("inv: %f %f %f %f\n", inv[0][0], inv[0][1], inv[1][0], inv[1][1]);
 
 		delete [] x;
 		delete [] y;
 	}
 	catch (...) {
-		// there is an error, rollback update process
-		determinant = tmpDeterminant;
-		memcpy(locParam, tmpLoc, sizeof(tmpLoc));
-		memcpy(cor, tmpCor, sizeof(tmpCor));
-		memcpy(cov, tmpCov, sizeof(tmpCov));
-		memcpy(inv, tmpInv, sizeof(tmpInv));
+		cov[0][0] = 0.05;
+		cov[0][1] = cov[1][0] = 0.00;
+		cov[1][1] = 0.17;
+		cor = calculateCor(cov);
+		inv = calculateInv(cor);
+		determinant = calculateDet(inv);
 	}
 
-
+	/*
 	// free all unused pointers
 	for(int i=0; i<2; i++) {
 		delete [] tmpCor;
@@ -334,6 +350,7 @@ void TDistribution::updateParams() {
 	delete[] tmpCor;
 	delete[] tmpCov;
 	delete[] tmpInv;
+	*/
 }
 
 /**

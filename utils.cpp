@@ -47,7 +47,7 @@ float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
  *
  * COR[i][j] = COV[i][j] / (std[i] * std[j])
  *
- * std[i] is the standard deviation of feature i
+ * std[i] = sqrt(COV[i][i]) is the standard deviation of feature i
  */
 float ** calculateCor(float ** cov) {
 	float a = sqrt(cov[0][0]);
