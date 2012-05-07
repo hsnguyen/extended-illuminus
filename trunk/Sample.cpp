@@ -12,9 +12,9 @@
  */
 Sample::Sample() {
 	name = "";
-	xIntensity = 0;
-	yIntensity = 0;
-	clusterIndex = -1;
+	contrast = 0;
+	strength = 0;
+	clusterIndex = 3;
 }
 
 /**
@@ -22,8 +22,8 @@ Sample::Sample() {
  */
 Sample::Sample(const Sample &s) {
 	name = s.name;
-	xIntensity = s.xIntensity;
-	yIntensity = s.yIntensity;
+	contrast = s.contrast;
+	strength = s.strength;
 	clusterIndex = s.clusterIndex;
 }
 
@@ -32,8 +32,8 @@ Sample::Sample(const Sample &s) {
  */
 Sample::Sample(string _name, float x, float y) {
 	name = _name;
-	xIntensity = x;
-	yIntensity = y;
+	contrast = x;
+	strength = y;
 }
 
 Sample::~Sample() {
@@ -50,9 +50,9 @@ void Sample::setName(string _name) {
 /**
  * set the intensities values (or contrast and strength)
  */
-void Sample::setIntensities(float x, float y) {
-	xIntensity = x;
-	yIntensity = y;
+void Sample::setValues(float x, float y) {
+	contrast = x;
+	strength = y;
 }
 
 /**
@@ -65,15 +65,15 @@ string Sample::getName() {
 /**
  * get the x intensities (or contrast)
  */
-float Sample::getXIntensity() {
-	return xIntensity;
+float Sample::getContrast() {
+	return contrast;
 }
 
 /**
  * get the y intensities (or strength)
  */
-float Sample::getYIntensity() {
-	return yIntensity;
+float Sample::getStrength() {
+	return strength;
 }
 
 /**

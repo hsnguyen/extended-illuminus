@@ -226,3 +226,8 @@ float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight)
 
 	return returnArray;
 }
+
+float mabs(float a) {
+	if(a > 0) return a;
+	return -a;
+}

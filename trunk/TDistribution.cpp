@@ -13,7 +13,8 @@
  */
 TDistribution::TDistribution() {
 	dof = 0;
-	determinant = 0;
+	determinant = 0.0;
+	aveCDistance = 0.0;
 	cor = new float*[2];
 	cov = new float*[2];
 	inv = new float*[2];
@@ -137,8 +138,8 @@ void TDistribution::calculateParams() {
 		}
 
 		for(unsigned int i=0; i<samples.size(); i++) {
-			x[i] = samples[i].getXIntensity();
-			y[i] = samples[i].getYIntensity();
+			x[i] = samples[i].getContrast();
+			y[i] = samples[i].getStrength();
 
 			xTotal += x[i];
 			yTotal += y[i];
@@ -146,6 +147,8 @@ void TDistribution::calculateParams() {
 
 		locParam[0] = xTotal / samples.size();
 		locParam[1] = yTotal / samples.size();
+
+		updateAveCDistance();
 
 		if (samples.size() < 4) throw "too less samples";
 
@@ -229,8 +232,8 @@ float * TDistribution::calculateProbArray(float *x, float *y) {
 string TDistribution::toString() {
 	char output[1000];
 
-	sprintf(output, "numberOfSamples: %d, degreeOfFreedom: %.2f, locationParams: (%.2f, %.2f), determinant: %.3f",
-			samples.size(), dof, locParam[0], locParam[1], determinant);
+	sprintf(output, "numberOfSamples: %d, degreeOfFreedom: %.2f, locationParams: (%.2f, %.2f), determinant: %.3f, average Distance: %.3f",
+			samples.size(), dof, locParam[0], locParam[1], determinant, aveCDistance);
 
 	return output;
 }
@@ -242,7 +245,7 @@ void TDistribution::toFile(string fileName) {
 	ofstream of;
 	of.open(fileName.c_str(), ios::out);
 	for(unsigned int i=0; i<samples.size(); i++) {
-		of << samples[i].getXIntensity() << " " << samples[i].getYIntensity() << " " << calculateProb(samples[i].getXIntensity(), samples[i].getYIntensity())<< "\n";
+		of << samples[i].getContrast() << " " << samples[i].getStrength() << " " << calculateProb(samples[i].getContrast(), samples[i].getStrength())<< "\n";
 	}
 	of << locParam[0] << " " << locParam[1] << " " << calculateProb(locParam[0], locParam[1]) << "\n";
 	of.close();
@@ -262,8 +265,8 @@ void TDistribution::toFile(string fileName) {
 vector<float> TDistribution::calculateWeights() {
 	vector<float> returnVec;
 	for(unsigned int i=0; i<samples.size(); i++) {
-		int x = samples[i].getXIntensity();
-		int y = samples[i].getYIntensity();
+		int x = samples[i].getContrast();
+		int y = samples[i].getStrength();
 		int t1 = x - locParam[0];
 		int t2 = y - locParam[1];
 
@@ -285,23 +288,6 @@ vector<float> TDistribution::calculateWeights() {
  * if there is an error when update params, keep them as the original
  */
 void TDistribution::updateParams() {
-	// save the original values
-	float * tmpLoc = new float[2];
-	float ** tmpCov = new float*[2];
-	float ** tmpCor = new float*[2];
-	float ** tmpInv = new float*[2];
-	for(int i=0; i<2; i++) {
-		tmpCov[i] = new float[2];
-		tmpCor[i] = new float[2];
-		tmpInv[i] = new float[2];
-	}
-	memcpy(tmpLoc, locParam, sizeof(locParam));
-	memcpy(tmpCor, cor, sizeof(cor));
-	memcpy(tmpInv, inv, sizeof(inv));
-	memcpy(tmpCov, cov, sizeof(cov));
-	float tmpDeterminant = determinant;
-
-
 	// try to update params
 	try {
 		float *x = new float[samples.size()];
@@ -313,19 +299,22 @@ void TDistribution::updateParams() {
 		vector<float> weights = calculateWeights();
 
 		for(unsigned int i=0; i<samples.size(); i++) {
-			x[i] = samples[i].getXIntensity();
-			y[i] = samples[i].getYIntensity();
+			x[i] = samples[i].getContrast();
+			y[i] = samples[i].getStrength();
 		}
 
 		locParam = updateLocParam(x, y, weights);
-		cov = updateCov(x, y, locParam[0], locParam[1], weights);
-		cor = calculateCor(cov);
-		inv = calculateInv(cor);
-		determinant = calculateDet(inv);
+		updateAveCDistance();
+
 		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
+		cov = updateCov(x, y, locParam[0], locParam[1], weights);
+		if(cov[0][0] == 0 || cov[1][1] == 0) throw "shit happens";
 		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
+		cor = calculateCor(cov);
 		//printf("cor: %f %f %f %f\n", cor[0][0], cor[0][1], cor[1][0], cor[1][1]);
+		inv = calculateInv(cor);
 		//printf("inv: %f %f %f %f\n", inv[0][0], inv[0][1], inv[1][0], inv[1][1]);
+		determinant = calculateDet(inv);
 
 		delete [] x;
 		delete [] y;
@@ -338,19 +327,6 @@ void TDistribution::updateParams() {
 		inv = calculateInv(cor);
 		determinant = calculateDet(inv);
 	}
-
-	/*
-	// free all unused pointers
-	for(int i=0; i<2; i++) {
-		delete [] tmpCor;
-		delete [] tmpCov;
-		delete [] tmpInv;
-	}
-	delete[] tmpLoc;
-	delete[] tmpCor;
-	delete[] tmpCov;
-	delete[] tmpInv;
-	*/
 }
 
 /**
@@ -431,4 +407,12 @@ bool TDistribution::isEqual(TDistribution t) {
 
 void TDistribution::removeAll() {
 	samples.clear();
+}
+
+void TDistribution::updateAveCDistance() {
+	float c = locParam[0];
+	for(unsigned int i=0; i<samples.size(); i++) {
+		aveCDistance += mabs(c - samples[i].getContrast());
+	}
+	aveCDistance /= samples.size();
 }

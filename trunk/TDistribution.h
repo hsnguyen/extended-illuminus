@@ -33,6 +33,7 @@ public:
 	string toString();
 	void toFile(string fileName);
 	void removeAll();
+	void updateAveCDistance();
 
 	float getDeterminant();
 	float ** getCov();
@@ -46,6 +47,7 @@ public:
 	float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix
 	float * locParam; // location parameters
 	vector<Sample> samples; // list of samples
+	float aveCDistance; // average contrast distance to the mean
 };
 
 #endif /* TDISTRIBUTION_H_ */

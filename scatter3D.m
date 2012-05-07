@@ -5,18 +5,18 @@ catch
 	disp ("no aa cluster")
 end_try_catch
 
-hold
+hold ('on')
 
 try
 	ab = load("AB")
-	scatter(ab(:,1), ab(:,2), ab(:,3), 'g')
+	scatter3(ab(:,1), ab(:,2), ab(:,3), 'g')
 catch
 	disp ("no ab cluster")
 end_try_catch
 
 try 
 	bb = load("BB")
-	scatter(bb(:,1), bb(:,2), bb(:,3), 'b')
+	scatter3(bb(:,1), bb(:,2), bb(:,3), 'b')
 catch
 	disp ("no bb cluster")
 end_try_catch

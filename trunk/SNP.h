@@ -36,7 +36,7 @@ public:
 	void writeToVCF(ofstream &myStream);
 	int getNumberOfSamples();
 	void setNumOfGoodSamples(int num);
-	void mixtureModel(vector<Sample> sampleList);
+	vector<Sample> mixtureModel(vector<Sample> sampleList);
 
 	void debug();
 private:
