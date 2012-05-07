@@ -8,7 +8,13 @@
 #include "utils.h"
 
 /**
- * calculate the covariance matrix
+ * calculate the 2x2 covariance matrix
+ * the formular is:
+ *
+ * COV = (1/(n-1)) * SumOf((Xi - mu)*(Xi - mu)^T)
+ *
+ * mu is the mean value of X
+ * Xi = (xi, yi) ^ T
  */
 float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 	float ** returnArray = new float*[2];
@@ -36,7 +42,12 @@ float ** calculateCov(float *x, float *y, float xm, float ym, int length) {
 }
 
 /**
- * calculate correlation matrix from covariance matrix
+ * calculate 2x2 correlation matrix from covariance matrix
+ * the formula is
+ *
+ * COR[i][j] = COV[i][j] / (std[i] * std[j])
+ *
+ * std[i] is the standard deviation of feature i
  */
 float ** calculateCor(float ** cov) {
 	float a = sqrt(cov[0][0]);
@@ -124,6 +135,9 @@ vector<string> getHeader(string source) {
 
 /**
  * transform from x,y intensities to strength and contrast
+ *
+ * contrast = (x-y) / (x+y);
+ * strength = log(x+y)
  */
 void transform(float &x, float &y) {
 	try {
@@ -156,6 +170,11 @@ void deTransform(float &x, float &y) {
 
 /**
  * update location parameter with weight for each sample
+ *
+ * mean = (SumOf(wi*Xi)) / (SumOf(wi))
+ *
+ * Xi = (xi, yi)^T
+ * wi is the weight for Xi
  */
 float * updateLocParam(float *x, float *y, vector<float> weights) {
 	int length = weights.size();
@@ -177,6 +196,11 @@ float * updateLocParam(float *x, float *y, vector<float> weights) {
 
 /**
  * update covariance matrix with weight for each sample
+ * COV = (1/(n-1)) * SumOf(wi * (Xi - mu)*(Xi - mu)^T)
+ *
+ * where mu is the mean of X
+ * Xi = (xi, yi)^T
+ * wi is the weight for each Xi
  */
 float ** updateCov(float *x, float *y, float xm, float ym, vector<float> weight) {
 	int length = weight.size();

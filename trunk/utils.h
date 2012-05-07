@@ -15,8 +15,8 @@
 
 using namespace std;
 
-const int MAX_ITER = 120;
-const float THRESHOLD = 0.55;
+const int MAX_ITER = 1200;
+const float THRESHOLD = 0.5;
 const float PI = 3.14159265;
 // length of an array
 #define length(a) ( sizeof ( a ) / sizeof ( *a ) )

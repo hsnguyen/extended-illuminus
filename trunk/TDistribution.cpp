@@ -37,7 +37,7 @@ TDistribution::TDistribution() {
  * copy constructor
  */
 TDistribution::TDistribution(const TDistribution &t) {
-	printf("COPY CONSTRUCTOR IS CALLED\n");
+	//printf("COPY CONSTRUCTOR IS CALLED\n");
 	dof = t.dof;
 	determinant = t.determinant;
 
@@ -161,11 +161,24 @@ void TDistribution::calculateParams() {
 }
 
 /**
- * calculate the density of point(x,y)
+ * calculate the density of X = (x,y)^T
+ *
+ * The formula is:
+ * 	f(X) = (|Sigma^-1| / (2 * PI)) * (1 + ((X - mu)^T * Sigma^(-1) * (X - mu))/dof)^(-(dof + 2)/2)
+ *
+ * where Sigma is the inverse matrix of correlation matrix
+ * PI = 3.14159265
+ * X = (x,y)^T
+ * mu is the location parameter
+ * dof is the degree of freedom
+ * for bivariate student distribution, p = 2
  */
 float TDistribution::calculateProb(float x, float y) {
 	try {
+		// A = |\Sigma^-1| / (2 * PI)
 		float returnVal = sqrt(determinant) / (2 * PI);
+
+		// B = (x - \mu)^T * \Sigma^(-1) * (x - \mu)
 		float t1 = x - locParam[0];
 		float t2 = y - locParam[1];
 		float inVal = 0;
@@ -174,9 +187,11 @@ float TDistribution::calculateProb(float x, float y) {
 		inVal += inv[1][0] * t1 * t2;
 		inVal += inv[0][1] * t1 * t2;
 
-		float newVal = 1 + inVal / dof;
+		// C = (1 + B / dof)^(-(dof + 2)/2)
+		float newVal = 1 + (inVal / dof);
 		inVal = pow(newVal, ((- dof - 2) / 2.0));
 
+		// f(X) = A * C
 		returnVal *= inVal;
 
 		return returnVal;
@@ -224,6 +239,14 @@ void TDistribution::toFile(string fileName) {
 
 /**
  * calculate the weights for each sample
+ *
+ * wi = (dof + p) / (dof + ((X - mu)^T * Sigma^(-1) * (X - mu)))
+ *
+ * where Sigma is the inverse matrix of correlation matrix
+ * X = (x,y)^T
+ * mu is the location parameter
+ * dof is the degree of freedom
+ * for bivariate student distribution, p = 2
  */
 vector<float> TDistribution::calculateWeights() {
 	vector<float> returnVec;
@@ -248,8 +271,27 @@ vector<float> TDistribution::calculateWeights() {
 
 /**
  * update parameters with weights for each sample
+ * if there is an error when update params, keep them as the original
  */
 void TDistribution::updateParams() {
+	// save the original values
+	float * tmpLoc = new float[2];
+	float ** tmpCov = new float*[2];
+	float ** tmpCor = new float*[2];
+	float ** tmpInv = new float*[2];
+	for(int i=0; i<2; i++) {
+		tmpCov[i] = new float[2];
+		tmpCor[i] = new float[2];
+		tmpInv[i] = new float[2];
+	}
+	memcpy(tmpLoc, locParam, sizeof(locParam));
+	memcpy(tmpCor, cor, sizeof(cor));
+	memcpy(tmpInv, inv, sizeof(inv));
+	memcpy(tmpCov, cov, sizeof(cov));
+	float tmpDeterminant = determinant;
+
+
+	// try to update params
 	try {
 		float *x = new float[samples.size()];
 		float *y = new float[samples.size()];
@@ -273,16 +315,25 @@ void TDistribution::updateParams() {
 		delete [] y;
 	}
 	catch (...) {
-		determinant = 0;
-		for(int i=0; i<2; i++) {
-			locParam[i] = 0;
-			for(int j=0; j<2; j++) {
-				cov[i][j] = 0;
-				cor[i][j] = 0;
-				inv[i][j] = 0;
-			}
-		}
+		// there is an error, rollback update process
+		determinant = tmpDeterminant;
+		memcpy(locParam, tmpLoc, sizeof(tmpLoc));
+		memcpy(cor, tmpCor, sizeof(tmpCor));
+		memcpy(cov, tmpCov, sizeof(tmpCov));
+		memcpy(inv, tmpInv, sizeof(tmpInv));
 	}
+
+
+	// free all unused pointers
+	for(int i=0; i<2; i++) {
+		delete [] tmpCor;
+		delete [] tmpCov;
+		delete [] tmpInv;
+	}
+	delete[] tmpLoc;
+	delete[] tmpCor;
+	delete[] tmpCov;
+	delete[] tmpInv;
 }
 
 /**
