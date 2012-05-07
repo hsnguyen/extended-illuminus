@@ -161,7 +161,7 @@ void SNP::assignData(string lineString, vector<string> _header) {
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
 	mixtureModel(tmpVec);
-	mixtureModel(samples);
+	//mixtureModel(samples);
 }
 
 /**
@@ -232,10 +232,10 @@ void SNP::initDistributions(vector<Sample> initSample) {
 			maxContrast = initSample[i].getXIntensity();
 		}
 	}
-	float spliter1 = minContrast + (maxContrast - minContrast) / 3;
-	float spliter2 = minContrast + (maxContrast - minContrast) * 2 / 3;
-	//float spliter1 = (float)-1/3;
-	//float spliter2 = (float)1/3;
+	//float spliter1 = minContrast + ((maxContrast - minContrast) / 3);
+	//float spliter2 = minContrast + ((maxContrast - minContrast) * 2 / 3);
+	float spliter1 = (float)-1/3;
+	float spliter2 = (float)1/3;
 
 	for(unsigned int i=0; i<initSample.size(); i++) {
 		Sample tmp = initSample[i];
@@ -336,13 +336,13 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 			float confAB = (float)ab / (aa + bb + ab);
 			float confBB = (float)bb / (aa + bb + ab);
 
-			/*
-			printf("AA: %.2f .. %.2f AB: %.2f .. %.2f BB: %.2f .. %.2f TOTAL: %f confAA: %f confAB: %f confBB: %f\n",
-					aa, preProbs[0] * distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
-					ab, preProbs[1] * distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
-					bb, preProbs[2] * distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity()),
-					(aa + ab + bb), confAA, confAB, confBB);
-			*/
+			if (aa + bb + ab == 0) {
+				confAA = confBB = confAB = 0;
+			}
+
+			//printf("x: %.2f, y: %.2f, AA: %.2f AB: %.2f BB: %.2f TOTAL: %.2f confAA: %.2f confAB: %.2f confBB: %.2f\n",
+			//		tmpSample.getXIntensity(), tmpSample.getYIntensity(), aa, ab, bb, (aa + ab + bb), confAA, confAB, confBB);
+
 
 			if(confAA > confAB && confAA > confBB && confAA > THRESHOLD) {
 				tmpDist[0].addNewSample(sampleList[i]);
@@ -357,8 +357,8 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 
 		// update the distributions' parameters
 		for(int i=0; i<3; i++) {
-			tmpDist[i].calculateParams();
-//			printf("%s\n", tmpDist[i].toString().c_str());
+			tmpDist[i].updateParams();
+			printf("%s\n", tmpDist[i].toString().c_str());
 		}
 
 		// compare the new distributions with the old ones

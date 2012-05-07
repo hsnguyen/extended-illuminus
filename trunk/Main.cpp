@@ -36,11 +36,12 @@ void readVCF(string fileName) {
 			sampleNames = getHeader(line);
 		}
 		else {
+			count ++;
+			if(count < 99) continue;
 			SNP tmpSNP;
 			tmpSNP.setNumOfGoodSamples(2228);
 			tmpSNP.assignData(line, sampleNames);
-			count ++;
-			if(count == 1) break;
+			if(count == 99) break;
 		}
 	}
 	myFile.close();
