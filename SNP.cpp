@@ -160,8 +160,8 @@ void SNP::assignData(string lineString, vector<string> _header) {
 	// init distribution
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
-	mixtureModel(tmpVec);
-	//mixtureModel(samples);
+	tmpVec = mixtureModel(tmpVec);
+	mixtureModel(samples);
 }
 
 /**
@@ -186,7 +186,7 @@ void SNP::addToMissing(float x, float y, string name) {
 string SNP::toString() {
 	unsigned int length = header.size();
 	string output = "";
-	output += chrom + "\t" + pos + "\t" + name + "\t" + ref + "\t" + alt + "\t.\t.\t" + info + "\t" + "GLI:XY\t";
+	output += chrom + "\t" + pos + "\t" + name + "\t" + ref + "\t" + alt + "\t.\t.\t" + info + "\t" + "GTI:XY\t";
 	int indexSample = 0;
 	int indexMissing = 0;
 	for(unsigned int i=0; i<length; i++) {
@@ -194,18 +194,26 @@ string SNP::toString() {
 		float b = 0;
 		char sampleOut[100];
 		if(header[i] == samples[indexSample].getName()) {
-			a = samples[indexSample].getXIntensity();
-			b = samples[indexSample].getYIntensity();
+			a = samples[indexSample].getContrast();
+			b = samples[indexSample].getStrength();
+
+			string clusterRes = "./.";
+			if (samples[indexSample].getClusterIndex() == 0) clusterRes = "0/0";
+			else if (samples[indexSample].getClusterIndex() == 1) clusterRes = "0/1";
+			else if (samples[indexSample].getClusterIndex() == 2) clusterRes = "1/1";
+
 			deTransform(a, b);
-			sprintf(sampleOut, "%.2f,%.2f,%.2f:%.2f,%.2f",
-					confScores[indexSample][0], confScores[indexSample][1], confScores[indexSample][2],
-					a, b);
+			//sprintf(sampleOut, "%.2f,%.2f,%.2f:%.2f,%.2f",
+			//		confScores[indexSample][0], confScores[indexSample][1], confScores[indexSample][2],
+			//		a, b);
+			sprintf(sampleOut, "%s:%.2f,%.2f", clusterRes.c_str(), a, b);
 			indexSample ++;
 		}
 		else {
-			a = missing[indexMissing].getXIntensity();
-			b = missing[indexMissing].getYIntensity();
-			sprintf(sampleOut, "0.00,0.00,0.00:%.2f,%.2f", a, b);
+			a = missing[indexMissing].getContrast();
+			b = missing[indexMissing].getStrength();
+			//sprintf(sampleOut, "0.00,0.00,0.00:%.2f,%.2f", a, b);
+			sprintf(sampleOut, "./.:%.2f,%.2f", a, b);
 			indexMissing ++;
 		}
 		output += sampleOut;
@@ -225,24 +233,24 @@ void SNP::initDistributions(vector<Sample> initSample) {
 	float maxContrast = -100;
 
 	for(unsigned int i=0; i<initSample.size(); i++) {
-		if(initSample[i].getXIntensity() < minContrast) {
-			minContrast = initSample[i].getXIntensity();
+		if(initSample[i].getContrast() < minContrast) {
+			minContrast = initSample[i].getContrast();
 		}
-		if(initSample[i].getXIntensity() > maxContrast) {
-			maxContrast = initSample[i].getXIntensity();
+		if(initSample[i].getContrast() > maxContrast) {
+			maxContrast = initSample[i].getContrast();
 		}
 	}
-	//float spliter1 = minContrast + ((maxContrast - minContrast) / 3);
-	//float spliter2 = minContrast + ((maxContrast - minContrast) * 2 / 3);
-	float spliter1 = (float)-1/3;
-	float spliter2 = (float)1/3;
+	float spliter1 = minContrast + ((maxContrast - minContrast) / 3);
+	float spliter2 = minContrast + ((maxContrast - minContrast) * 2 / 3);
+	//float spliter1 = (float)-1/3;
+	//float spliter2 = (float)1/3;
 
 	for(unsigned int i=0; i<initSample.size(); i++) {
 		Sample tmp = initSample[i];
-		if(tmp.getXIntensity() <= spliter1) {
+		if(tmp.getContrast() <= spliter1) {
 			distributions[2].addNewSample(tmp);
 		}
-		else if (tmp.getXIntensity() <= spliter2) {
+		else if (tmp.getContrast() <= spliter2) {
 			distributions[1].addNewSample(tmp);
 		}
 		else {
@@ -288,7 +296,7 @@ void SNP::writeToVCF(ofstream &myStream) {
 /**
  * using mixture model algorithm to cluster the sample in sampleList into three clusters
  */
-void SNP::mixtureModel(vector<Sample> sampleList) {
+vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 
 	int iter = 0;
 	int numSamples = sampleList.size();
@@ -297,7 +305,7 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 	while (iter < MAX_ITER) {
 		iter ++;
 		printf("================== iteration: %d ==================\n", iter);
-		//printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
+		//printf("distribution0: %f %f %f %f\n", distributions[0].cov[0][0], distributions[0].cov[0][1], distributions[0].cov[1][0], distributions[0].cov[1][1]);
 		//printf("distribution1: %f %f %f %f\n", distributions[1].inv[0][0], distributions[1].inv[0][1], distributions[1].inv[1][0], distributions[1].inv[1][1]);
 		//printf("distribution2: %f %f %f %f\n", distributions[2].inv[0][0], distributions[2].inv[0][1], distributions[2].inv[1][0], distributions[2].inv[1][1]);
 		// calculate preprob
@@ -313,23 +321,28 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 			preProbs[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
 		}
 
-		float *x = new float[numSamples];
-		float *y = new float[numSamples];
-
-		// get x, y
-		for(int i=0; i<numSamples; i++) {
-			x[i] = sampleList[i].getXIntensity();
-			y[i] = sampleList[i].getYIntensity();
-		}
-
 		// assign samples to distribution
 		for(int i=0; i<numSamples; i++) {
 			Sample tmpSample = sampleList[i];
+			float currentC = tmpSample.getContrast();
+			float currentS = tmpSample.getStrength();
 
 			// calculate the post probabilities for each sample
-			float aa = preProbs[i] * distributions[0].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
-			float bb = preProbs[i] * distributions[2].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
-			float ab = preProbs[i] * distributions[1].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
+			float aa = preProbs[i] * distributions[0].calculateProb(currentC, currentS);
+			float bb = preProbs[i] * distributions[2].calculateProb(currentC, currentS);
+			float ab = preProbs[i] * distributions[1].calculateProb(currentC, currentS);
+
+
+			if(currentC >= (distributions[1].locParam[0] - distributions[1].aveCDistance)) {
+				bb = 0;
+			}
+			if(currentC <= (distributions[1].locParam[0] + distributions[1].aveCDistance)) {
+				aa = 0;
+			}
+			if(currentC >= (distributions[0].locParam[0] - distributions[0].aveCDistance)
+				|| currentC <= (distributions[2].locParam[0] + distributions[2].aveCDistance)) {
+				ab = 0;
+			}
 
 			// the confidence score of clustering for each sample
 			float confAA = (float)aa / (aa + bb + ab);
@@ -341,17 +354,26 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 			}
 
 			//printf("x: %.2f, y: %.2f, AA: %.2f AB: %.2f BB: %.2f TOTAL: %.2f confAA: %.2f confAB: %.2f confBB: %.2f\n",
-			//		tmpSample.getXIntensity(), tmpSample.getYIntensity(), aa, ab, bb, (aa + ab + bb), confAA, confAB, confBB);
+			//		tmpSample.getContrast(), tmpSample.getStrength(), aa, ab, bb, (aa + ab + bb), confAA, confAB, confBB);
 
 
 			if(confAA > confAB && confAA > confBB && confAA > THRESHOLD) {
+				sampleList[i].setClusterIndex(0);
+				samples[i].setClusterIndex(0);
 				tmpDist[0].addNewSample(sampleList[i]);
 			}
 			else if (confAB > confAA && confAB > confBB && confAB > THRESHOLD) {
+				sampleList[i].setClusterIndex(1);
+				samples[i].setClusterIndex(1);
 				tmpDist[1].addNewSample(sampleList[i]);
 			}
 			else if (confBB > confAA && confBB > confAB && confBB > THRESHOLD) {
+				sampleList[i].setClusterIndex(2);
+				samples[i].setClusterIndex(2);
 				tmpDist[2].addNewSample(sampleList[i]);
+			}
+			else {
+				sampleList[i].setClusterIndex(3);
 			}
 		}
 
@@ -370,8 +392,6 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 		distributions[1] = tmpDist[1];
 		distributions[2] = tmpDist[2];
 
-		delete[] x;
-		delete[] y;
 		delete[] preProbs;
 
 		// if all distributions remain the same, break
@@ -383,4 +403,6 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 	distributions[1].toFile("AB");
 	distributions[2].toFile("BB");
 	debug();
+
+	return sampleList;
 }

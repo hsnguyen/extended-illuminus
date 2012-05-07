@@ -15,17 +15,17 @@ class Sample {
 public:
 	Sample();
 	Sample(const Sample &s);
-	Sample(string _name, float x, float y);
+	Sample(string _name, float c, float s);
 	virtual ~Sample();
 	void setName(string _name);
-	void setIntensities(float x, float y);
+	void setValues(float c, float s);
 	void setClusterIndex(int index);
-	float getXIntensity();
-	float getYIntensity();
+	float getContrast();
+	float getStrength();
 	string getName();
 	int getClusterIndex();
 	string name;
-	float xIntensity, yIntensity;
+	float contrast, strength;
 	int clusterIndex; // 0: AA, 1: AB, 2: BB, 3: NULL
 };
 

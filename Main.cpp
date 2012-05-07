@@ -13,6 +13,7 @@ using namespace std;
 
 
 string fileName = "trunk/Data/first1000snps.vcf";
+//string fileName = "trunk/Data/header.vcf";
 string outputFile = "test.vcf";
 
 void readVCF(string fileName) {
@@ -37,11 +38,12 @@ void readVCF(string fileName) {
 		}
 		else {
 			count ++;
-			if(count < 99) continue;
+			if(count < 9) continue;
 			SNP tmpSNP;
 			tmpSNP.setNumOfGoodSamples(2228);
 			tmpSNP.assignData(line, sampleNames);
-			if(count == 99) break;
+			//cout << tmpSNP.toString() << endl;
+			if(count == 9) break;
 		}
 	}
 	myFile.close();
