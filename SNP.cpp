@@ -234,6 +234,8 @@ void SNP::initDistributions(vector<Sample> initSample) {
 	}
 	float spliter1 = minContrast + (maxContrast - minContrast) / 3;
 	float spliter2 = minContrast + (maxContrast - minContrast) * 2 / 3;
+	//float spliter1 = (float)-1/3;
+	//float spliter2 = (float)1/3;
 
 	for(unsigned int i=0; i<initSample.size(); i++) {
 		Sample tmp = initSample[i];
@@ -290,13 +292,14 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 
 	int iter = 0;
 	int numSamples = sampleList.size();
-
+	for(int i=0; i<3; i++)
+		printf("%s\n", distributions[i].toString().c_str());
 	while (iter < MAX_ITER) {
 		iter ++;
 		printf("================== iteration: %d ==================\n", iter);
-		printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
-		printf("distribution1: %f %f %f %f\n", distributions[1].inv[0][0], distributions[1].inv[0][1], distributions[1].inv[1][0], distributions[1].inv[1][1]);
-		printf("distribution2: %f %f %f %f\n", distributions[2].inv[0][0], distributions[2].inv[0][1], distributions[2].inv[1][0], distributions[2].inv[1][1]);
+		//printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
+		//printf("distribution1: %f %f %f %f\n", distributions[1].inv[0][0], distributions[1].inv[0][1], distributions[1].inv[1][0], distributions[1].inv[1][1]);
+		//printf("distribution2: %f %f %f %f\n", distributions[2].inv[0][0], distributions[2].inv[0][1], distributions[2].inv[1][0], distributions[2].inv[1][1]);
 		// calculate preprob
 		TDistribution tmpDist[3];
 		for(int i=0; i<3; i++) {
@@ -304,6 +307,7 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 			tmpDist[i].removeAll();
 		}
 
+		// prior probabilities for distributions
 		float *preProbs = new float[3];
 		for(int i=0; i<3; i++) {
 			preProbs[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
@@ -320,13 +324,17 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 
 		// assign samples to distribution
 		for(int i=0; i<numSamples; i++) {
-			float aa = distributions[0].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
-			float bb = distributions[2].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
-			float ab = distributions[1].calculateProb(sampleList[i].getXIntensity(), sampleList[i].getYIntensity());
+			Sample tmpSample = sampleList[i];
 
-			float confAA = aa / (aa + bb + ab);
-			float confAB = ab / (aa + bb + ab);
-			float confBB = bb / (aa + bb + ab);
+			// calculate the post probabilities for each sample
+			float aa = preProbs[i] * distributions[0].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
+			float bb = preProbs[i] * distributions[2].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
+			float ab = preProbs[i] * distributions[1].calculateProb(tmpSample.getXIntensity(), tmpSample.getYIntensity());
+
+			// the confidence score of clustering for each sample
+			float confAA = (float)aa / (aa + bb + ab);
+			float confAB = (float)ab / (aa + bb + ab);
+			float confBB = (float)bb / (aa + bb + ab);
 
 			/*
 			printf("AA: %.2f .. %.2f AB: %.2f .. %.2f BB: %.2f .. %.2f TOTAL: %f confAA: %f confAB: %f confBB: %f\n",
@@ -336,24 +344,24 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 					(aa + ab + bb), confAA, confAB, confBB);
 			*/
 
-			if(confAA > THRESHOLD) {
+			if(confAA > confAB && confAA > confBB && confAA > THRESHOLD) {
 				tmpDist[0].addNewSample(sampleList[i]);
 			}
-			else if (confAB > THRESHOLD) {
+			else if (confAB > confAA && confAB > confBB && confAB > THRESHOLD) {
 				tmpDist[1].addNewSample(sampleList[i]);
 			}
-			else if (confBB > THRESHOLD) {
+			else if (confBB > confAA && confBB > confAB && confBB > THRESHOLD) {
 				tmpDist[2].addNewSample(sampleList[i]);
 			}
 		}
 
-		// recalculate the three distribution
+		// update the distributions' parameters
 		for(int i=0; i<3; i++) {
 			tmpDist[i].calculateParams();
-			printf("%s\n", tmpDist[i].toString().c_str());
+//			printf("%s\n", tmpDist[i].toString().c_str());
 		}
 
-		// compare to earlier distribution
+		// compare the new distributions with the old ones
 		bool passAA = tmpDist[0].isEqual(distributions[0]);
 		bool passAB = tmpDist[1].isEqual(distributions[1]);
 		bool passBB = tmpDist[2].isEqual(distributions[2]);
@@ -361,13 +369,6 @@ void SNP::mixtureModel(vector<Sample> sampleList) {
 		distributions[0] = tmpDist[0];
 		distributions[1] = tmpDist[1];
 		distributions[2] = tmpDist[2];
-		printf("distribution0: %f %f %f %f\n", distributions[0].inv[0][0], distributions[0].inv[0][1], distributions[0].inv[1][0], distributions[0].inv[1][1]);
-		printf("distribution1: %f %f %f %f\n", distributions[1].inv[0][0], distributions[1].inv[0][1], distributions[1].inv[1][0], distributions[1].inv[1][1]);
-		printf("distribution2: %f %f %f %f\n", distributions[2].inv[0][0], distributions[2].inv[0][1], distributions[2].inv[1][0], distributions[2].inv[1][1]);
-
-		//distributions[0].toFile("AA");
-		//distributions[1].toFile("AB");
-		//distributions[2].toFile("BB");
 
 		delete[] x;
 		delete[] y;
