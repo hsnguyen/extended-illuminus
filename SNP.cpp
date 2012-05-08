@@ -295,6 +295,49 @@ void SNP::writeToVCF(ofstream &myStream) {
 
 /**
  * using mixture model algorithm to cluster the sample in sampleList into three clusters
+ *
+ * 	WHILE iter < MAX_ITER
+ * 		// calculate prior probabilities of distributions
+ * 		FOR i = 1 -> 3
+ * 			priorProbs[i] <- numSamples[i] / totalSamples;
+ * 			oldDists[i] <- dists[i];
+ * 			dists[i] = NULL;
+ * 		END_FOR
+ *
+ * 		FOR EACH sample IN samples
+ * 			// compute posterior probabilities
+ * 			FOR i = 1 .. 3
+ *				postProbs[i] <- priorProbs[i] * prob[i][sample];
+ *			END_FOR
+ *
+ *			// compute confidence scores
+ *			total <- SUM(postProbs);
+ *			FOR i = 1 .. 3
+ *				confScores[i] = postProbs[i] / total;
+ *			END_FOR
+ *
+ *			// ensure there is no conflict between any two distributions
+ *			c <- SAMPLE.contrast
+ *			IF (c >= (dists[2].locContrast - dists[2].meanContrast))
+ *				confScores[3] <- 0;
+ *			ELSE IF (c <= (dists[2].locContrast + dists[2].meanContrast))
+ *				confScores[1] <- 0;
+ *			ELSE IF ((c <= (dists[3].locContrast + dists[3].meanContrast))
+ *						|| (c <= (dists[1].locContrast - dists[1].meanContrast)))
+ *				confScores[2] <- 0;
+ *			END_IF
+ *
+ *			// assign sample to distribution which has highest confidence score
+ *			k <- argmax(confScores[i]);
+ *			IF (confScore[k] > TRESHOLD)
+ *				dists[k] += {sample};
+ *			END_IF
+ * 		END_FOR
+ *
+ * 		IF (oldDists == dists)
+ * 			BREAK;
+ * 		END_IF
+ * 	END_WHILE
  */
 vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 
