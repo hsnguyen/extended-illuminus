@@ -161,7 +161,7 @@ void SNP::assignData(string lineString, vector<string> _header) {
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
 	tmpVec = mixtureModel(tmpVec);
-	mixtureModel(samples);
+	//mixtureModel(samples);
 }
 
 /**
@@ -267,6 +267,24 @@ void SNP::debug() {
 	for(int i=0; i<3; i++) {
 		printf("distribution %d: %s\n", i, distributions[i].toString().c_str());
 	}
+
+	int aa = 0, bb = 0, ab = 0, nil = 0;
+	ofstream o;
+	o.open("NULL", ios::out);
+	for(unsigned int i=0; i<samples.size(); i++) {
+		int index = samples[i].getClusterIndex();
+		if(index == 0) aa ++;
+		else if (index == 1) ab ++;
+		else if (index == 2) bb ++;
+		else {
+			o << samples[i].getContrast() << " " << samples[i].getStrength() << endl;
+			nil ++;
+		}
+	}
+	o.close();
+
+	printf("number of samples in each distribution AA: %d, AB: %d, BB: %d, NULL: %d",
+			aa, ab, bb, (nil + missing.size()));
 }
 
 /**
@@ -348,10 +366,7 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 	while (iter < MAX_ITER) {
 		iter ++;
 		printf("================== iteration: %d ==================\n", iter);
-		//printf("distribution0: %f %f %f %f\n", distributions[0].cov[0][0], distributions[0].cov[0][1], distributions[0].cov[1][0], distributions[0].cov[1][1]);
-		//printf("distribution1: %f %f %f %f\n", distributions[1].inv[0][0], distributions[1].inv[0][1], distributions[1].inv[1][0], distributions[1].inv[1][1]);
-		//printf("distribution2: %f %f %f %f\n", distributions[2].inv[0][0], distributions[2].inv[0][1], distributions[2].inv[1][0], distributions[2].inv[1][1]);
-		// calculate preprob
+
 		TDistribution tmpDist[3];
 		for(int i=0; i<3; i++) {
 			tmpDist[i] = distributions[i];
@@ -359,10 +374,15 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 		}
 
 		// prior probabilities for distributions
-		float *preProbs = new float[3];
-		for(int i=0; i<3; i++) {
-			preProbs[i] = (float) distributions[i].getNumberOfSamples() / sampleList.size();
-		}
+		float *priorProbs = new float[3];
+		float pa = 2 * distributions[0].getNumberOfSamples();
+		float pb = 2 * distributions[2].getNumberOfSamples();
+		pa += distributions[1].getNumberOfSamples();
+		pb += distributions[1].getNumberOfSamples();
+		float totp = pa + pb;
+		priorProbs[0] = (float) pa * pa / totp / totp;
+		priorProbs[1] = (float) 2 * pa * pb / totp / totp;
+		priorProbs[2] = (float) pb * pb / totp / totp;
 
 		// assign samples to distribution
 		for(int i=0; i<numSamples; i++) {
@@ -371,9 +391,12 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 			float currentS = tmpSample.getStrength();
 
 			// calculate the post probabilities for each sample
-			float aa = preProbs[i] * distributions[0].calculateProb(currentC, currentS);
-			float bb = preProbs[i] * distributions[2].calculateProb(currentC, currentS);
-			float ab = preProbs[i] * distributions[1].calculateProb(currentC, currentS);
+			float aa = distributions[0].calculateProb(currentC, currentS);
+			float bb = distributions[2].calculateProb(currentC, currentS);
+			float ab = distributions[1].calculateProb(currentC, currentS);
+			//aa *= priorProbs[0];
+			//ab *= priorProbs[1];
+			//bb *= priorProbs[2];
 
 
 			if(currentC >= (distributions[1].locParam[0] - distributions[1].aveCDistance)) {
@@ -396,10 +419,6 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 				confAA = confBB = confAB = 0;
 			}
 
-			//printf("x: %.2f, y: %.2f, AA: %.2f AB: %.2f BB: %.2f TOTAL: %.2f confAA: %.2f confAB: %.2f confBB: %.2f\n",
-			//		tmpSample.getContrast(), tmpSample.getStrength(), aa, ab, bb, (aa + ab + bb), confAA, confAB, confBB);
-
-
 			if(confAA > confAB && confAA > confBB && confAA > THRESHOLD) {
 				sampleList[i].setClusterIndex(0);
 				samples[i].setClusterIndex(0);
@@ -416,6 +435,7 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 				tmpDist[2].addNewSample(sampleList[i]);
 			}
 			else {
+				samples[i].setClusterIndex(3);
 				sampleList[i].setClusterIndex(3);
 			}
 		}
@@ -435,7 +455,7 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 		distributions[1] = tmpDist[1];
 		distributions[2] = tmpDist[2];
 
-		delete[] preProbs;
+		delete[] priorProbs;
 
 		// if all distributions remain the same, break
 		if(passAA && passAB && passBB)
