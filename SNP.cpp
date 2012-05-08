@@ -161,7 +161,7 @@ void SNP::assignData(string lineString, vector<string> _header) {
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
 	tmpVec = mixtureModel(tmpVec);
-	//mixtureModel(samples);
+	mixtureModel(samples);
 }
 
 /**
@@ -394,9 +394,9 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 			float aa = distributions[0].calculateProb(currentC, currentS);
 			float bb = distributions[2].calculateProb(currentC, currentS);
 			float ab = distributions[1].calculateProb(currentC, currentS);
-			//aa *= priorProbs[0];
-			//ab *= priorProbs[1];
-			//bb *= priorProbs[2];
+			aa *= priorProbs[0];
+			ab *= priorProbs[1];
+			bb *= priorProbs[2];
 
 
 			if(currentC >= (distributions[1].locParam[0] - distributions[1].aveCDistance)) {
@@ -419,17 +419,17 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 				confAA = confBB = confAB = 0;
 			}
 
-			if(confAA > confAB && confAA > confBB && confAA > THRESHOLD) {
+			if(confAA >= confAB && confAA >= confBB && confAA >= THRESHOLD) {
 				sampleList[i].setClusterIndex(0);
 				samples[i].setClusterIndex(0);
 				tmpDist[0].addNewSample(sampleList[i]);
 			}
-			else if (confAB > confAA && confAB > confBB && confAB > THRESHOLD) {
+			else if (confAB >= confAA && confAB >= confBB && confAB >= THRESHOLD) {
 				sampleList[i].setClusterIndex(1);
 				samples[i].setClusterIndex(1);
 				tmpDist[1].addNewSample(sampleList[i]);
 			}
-			else if (confBB > confAA && confBB > confAB && confBB > THRESHOLD) {
+			else if (confBB >= confAA && confBB >= confAB && confBB >= THRESHOLD) {
 				sampleList[i].setClusterIndex(2);
 				samples[i].setClusterIndex(2);
 				tmpDist[2].addNewSample(sampleList[i]);
