@@ -12,8 +12,8 @@
 using namespace std;
 
 
-string fileName = "trunk/Data/first1000snps.vcf";
-//string fileName = "trunk/Data/header.vcf";
+//string fileName = "trunk/Data/first1000snps.vcf";
+string fileName = "trunk/Data/header.vcf";
 string outputFile = "test.vcf";
 
 void writeVCF(string fileName) {
@@ -40,6 +40,7 @@ void writeVCF(string fileName) {
 	myFile << "##---------X and Y value, normalized" << endl;
 	myFile << "##FORMAT=<ID=XY,Number=2,Type=float,Description=\"norm X and Y\">" << endl;
 }
+
 void process(string inFile, string outFile) {
 	writeVCF(outFile);
 	ifstream myFile;
@@ -71,12 +72,12 @@ void process(string inFile, string outFile) {
 		}
 		else {
 			count ++;
-			if(count < 4) continue;
+			//if(count < 15) continue;
 			SNP tmpSNP;
 			tmpSNP.setNumOfGoodSamples(2228);
 			tmpSNP.assignData(line, sampleNames);
-			oFile << tmpSNP.toString() << endl;
-			if(count == 4) break;
+			oFile << tmpSNP.toString();
+			if(count == 15) break;
 		}
 	}
 	oFile.close();

@@ -153,7 +153,8 @@ void TDistribution::calculateParams() {
 		if (samples.size() < 4) throw "too less samples";
 
 		cov = calculateCov(x, y, locParam[0], locParam[1], samples.size());
-		cor = calculateCor(cov);
+		//cor = calculateCor(cov);
+		cor = cov;
 		inv = calculateInv(cor);
 		determinant = calculateDet(inv);
 		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
@@ -306,14 +307,11 @@ void TDistribution::updateParams() {
 		locParam = updateLocParam(x, y, weights);
 		updateAveCDistance();
 
-		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
 		cov = updateCov(x, y, locParam[0], locParam[1], weights);
 		if(cov[0][0] == 0 || cov[1][1] == 0) throw "shit happens";
-		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
-		cor = calculateCor(cov);
-		//printf("cor: %f %f %f %f\n", cor[0][0], cor[0][1], cor[1][0], cor[1][1]);
+		//cor = calculateCor(cov);
+		cor = cov;
 		inv = calculateInv(cor);
-		//printf("inv: %f %f %f %f\n", inv[0][0], inv[0][1], inv[1][0], inv[1][1]);
 		determinant = calculateDet(inv);
 
 		delete [] x;
