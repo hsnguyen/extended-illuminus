@@ -157,10 +157,12 @@ void SNP::assignData(string lineString, vector<string> _header) {
 		}
 	}
 
-	// init distribution
+	// get good samples
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
+	// cluster good samples only
 	tmpVec = mixtureModel(tmpVec);
+	// cluster all samples
 	mixtureModel(samples);
 }
 
@@ -283,6 +285,10 @@ void SNP::debug() {
 	}
 	o.close();
 
+	distributions[0].toFile("AA");
+	distributions[1].toFile("AB");
+	distributions[2].toFile("BB");
+
 	printf("number of samples in each distribution AA: %d, AB: %d, BB: %d, NULL: %d",
 			aa, ab, bb, (nil + missing.size()));
 }
@@ -292,7 +298,7 @@ void SNP::debug() {
  * all good samples must be placed before bad samples in the given data
  */
 vector<Sample> SNP::getGoodData() {
-	if(numberOfGoodSample == -1 || numberOfGoodSample > header.size()) return samples;
+	if(numberOfGoodSample == -1 || numberOfGoodSample > (int)header.size()) return samples;
 	vector<Sample> returnData;
 	int indexSample = 0;
 	for(int i=0; i<numberOfGoodSample; i++) {
@@ -462,9 +468,6 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 			break;
 	}
 	printf("==========================================\n");
-	distributions[0].toFile("AA");
-	distributions[1].toFile("AB");
-	distributions[2].toFile("BB");
 	debug();
 
 	return sampleList;
