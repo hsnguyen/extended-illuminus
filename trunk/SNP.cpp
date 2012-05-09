@@ -279,7 +279,7 @@ void SNP::debug() {
 		else if (index == 1) ab ++;
 		else if (index == 2) bb ++;
 		else {
-			o << samples[i].getContrast() << " " << samples[i].getStrength() << endl;
+			o << samples[i].getContrast() << " " << samples[i].getStrength() << " 0"<< endl;
 			nil ++;
 		}
 	}
