@@ -308,7 +308,7 @@ void TDistribution::updateParams() {
 		updateAveCDistance();
 
 		cov = updateCov(x, y, locParam[0], locParam[1], weights);
-		if(cov[0][0] == 0 || cov[1][1] == 0) throw "shit happens";
+		if(cov[0][0] == 0 || cov[1][1] == 0) throw "can't calculate correlation";
 		//cor = calculateCor(cov);
 		cor = cov;
 		inv = calculateInv(cor);
