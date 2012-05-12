@@ -16,12 +16,13 @@
 using namespace std;
 
 const int MAX_ITER = 100;
-const float THRESHOLD = 0.99;
+const float THRESHOLD = 0.95;
 const float PI = 3.14159265;
 // length of an array
 #define length(a) ( sizeof ( a ) / sizeof ( *a ) )
 #define max(a,b) ((a > b)? a : b)
 #define min(a,b) ((a < b)? a : b)
+#define DEBUG 1
 
 
 float mabs(float a);

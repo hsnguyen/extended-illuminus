@@ -7,6 +7,7 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <cstring>
 #include "SNP.h"
 
 using namespace std;
@@ -15,6 +16,7 @@ using namespace std;
 //string fileName = "trunk/Data/first1000snps.vcf";
 string fileName = "trunk/Data/header.vcf";
 string outputFile = "test.vcf";
+int numberOfGoodSamples = 2228;
 
 void writeVCF(string fileName) {
 	ofstream myFile;
@@ -72,19 +74,31 @@ void process(string inFile, string outFile) {
 		}
 		else {
 			count ++;
-			//if(count < 15) continue;
+			//if(count < 3) continue;
 			SNP tmpSNP;
-			tmpSNP.setNumOfGoodSamples(2228);
+			tmpSNP.setNumOfGoodSamples(numberOfGoodSamples);
 			tmpSNP.assignData(line, sampleNames);
 			oFile << tmpSNP.toString();
-			if(count == 15) break;
+			//if(count == 3) break;
 		}
 	}
 	oFile.close();
 	myFile.close();
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+	if(argc < 3) {
+		cerr << "Invalid parameters, use: " << argv[0] << " -in inputVCF -out outputVCF [-ng noGoodSamples]\n";
+		exit(1);
+	}
+
+	for(int i=0; i<argc; i++) {
+		if(strcmp(argv[i], "-in") == 0) fileName = argv[++i];
+		else if (strcmp(argv[i], "-out") == 0) outputFile = argv[++i];
+		else if (strcmp(argv[i], "-ng") == 0) numberOfGoodSamples = atoi(argv[++i]);
+	}
+	printf("input file name: %s\noutput file name: %s\nnumber of good samples: %d\n",
+			fileName.c_str(), outputFile.c_str(), numberOfGoodSamples);
 	process(fileName, outputFile);
 	return 0;
 }

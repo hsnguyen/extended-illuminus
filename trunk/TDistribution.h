@@ -38,13 +38,14 @@ public:
 	float getDeterminant();
 	float ** getCov();
 	float * getLocParam();
-	float ** getCor();
+	//float ** getCor();
 	float ** getInv();
 	int getDOF();
 	vector<Sample> getSamples();
 	float dof; // degree of freedom
 	float determinant; // determinant of correlation matrix
-	float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix
+	//float ** cor, ** inv, ** cov; // correlation, inverse of correlation, covariance matrix
+	float ** cov, ** inv;
 	float * locParam; // location parameters
 	vector<Sample> samples; // list of samples
 	float aveCDistance; // average contrast distance to the mean
