@@ -12,6 +12,7 @@
 #include "TDistribution.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "utils.h"
 
 class SNP {
 public:
@@ -38,7 +39,7 @@ public:
 	void setNumOfGoodSamples(int num);
 	vector<Sample> mixtureModel(vector<Sample> sampleList);
 
-	void debug();
+	void debug(vector<Sample> sampleList);
 private:
 	vector<string> header;
 	TDistribution * distributions;

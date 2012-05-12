@@ -15,19 +15,19 @@ TDistribution::TDistribution() {
 	dof = 0;
 	determinant = 0.0;
 	aveCDistance = 0.0;
-	cor = new float*[2];
+	//cor = new float*[2];
 	cov = new float*[2];
 	inv = new float*[2];
 	locParam = new float[2];
 
 	for(int i=0; i<2; i++) {
-		cor[i] = new float[2];
+		//cor[i] = new float[2];
 		cov[i] = new float[2];
 		inv[i] = new float[2];
 
 		locParam[i] = 0;
 		for(int j = 0; j<2; j++) {
-			cor[i][j] = 0;
+			//cor[i][j] = 0;
 			cov[i][j] = 0;
 			inv[i][j] = 0;
 		}
@@ -41,20 +41,21 @@ TDistribution::TDistribution(const TDistribution &t) {
 	//printf("COPY CONSTRUCTOR IS CALLED\n");
 	dof = t.dof;
 	determinant = t.determinant;
+	aveCDistance = t.aveCDistance;
 
-	cor = new float*[2];
+	//cor = new float*[2];
 	cov = new float*[2];
 	inv = new float*[2];
 	locParam = new float[2];
 
 	for(int i=0; i<2; i++) {
-		cor[i] = new float[2];
+		//cor[i] = new float[2];
 		cov[i] = new float[2];
 		inv[i] = new float[2];
 
 		locParam[i] = t.locParam[i];
 		for(int j = 0; j<2; j++) {
-			cor[i][j] = t.cor[i][j];
+			//cor[i][j] = t.cor[i][j];
 			cov[i][j] = t.cov[i][j];
 			inv[i][j] = t.inv[i][j];
 		}
@@ -75,18 +76,19 @@ TDistribution::TDistribution(const TDistribution &t) {
  * destructor
  */
 TDistribution::~TDistribution() {
-	/*
-	for(int i=0; i<2; i++) {
-		delete[] cor[i];
-		delete[] cov[i];
-		delete[] inv[i];
+	if (*cov != NULL && *inv != NULL && locParam != NULL) {
+		for(int i=0; i<2; i++) {
+			//delete[] cor[i];
+			delete[] cov[i];
+			delete[] inv[i];
+		}
+
+		//delete [] cor;
+		delete [] cov;
+		delete [] inv;
+		delete [] locParam;
 	}
 
-	delete [] cor;
-	delete [] cov;
-	delete [] inv;
-	delete [] locParam;
-	*/
 }
 
 /**
@@ -130,7 +132,7 @@ void TDistribution::calculateParams() {
 				locParam[i] = 0;
 				for(int j=0; j<2; j++) {
 					cov[i][j] = 0;
-					cor[i][j] = 0;
+					//cor[i][j] = 0;
 					inv[i][j] = 0;
 				}
 			}
@@ -154,8 +156,9 @@ void TDistribution::calculateParams() {
 
 		cov = calculateCov(x, y, locParam[0], locParam[1], samples.size());
 		//cor = calculateCor(cov);
-		cor = cov;
-		inv = calculateInv(cor);
+		//cor = cov;
+		//inv = calculateInv(cor);
+		inv = calculateInv(cov);
 		determinant = calculateDet(inv);
 		//printf("loc: %f, %f\n", locParam[0], locParam[1]);
 		//printf("cov: %f %f %f %f\n", cov[0][0], cov[0][1], cov[1][0], cov[1][1]);
@@ -168,8 +171,9 @@ void TDistribution::calculateParams() {
 		cov[0][0] = 0.05;
 		cov[0][1] = cov[1][0] = 0.00;
 		cov[1][1] = 0.17;
-		cor = calculateCor(cov);
-		inv = calculateInv(cor);
+		//cor = calculateCor(cov);
+		//inv = calculateInv(cor);
+		inv = calculateInv(cov);
 		determinant = calculateDet(inv);
 	}
 }
@@ -310,8 +314,9 @@ void TDistribution::updateParams() {
 		cov = updateCov(x, y, locParam[0], locParam[1], weights);
 		if(cov[0][0] == 0 || cov[1][1] == 0) throw "can't calculate correlation";
 		//cor = calculateCor(cov);
-		cor = cov;
-		inv = calculateInv(cor);
+		//cor = cov;
+		//inv = calculateInv(cor);
+		inv = calculateInv(cov);
 		determinant = calculateDet(inv);
 
 		delete [] x;
@@ -321,8 +326,9 @@ void TDistribution::updateParams() {
 		cov[0][0] = 0.05;
 		cov[0][1] = cov[1][0] = 0.00;
 		cov[1][1] = 0.17;
-		cor = calculateCor(cov);
-		inv = calculateInv(cor);
+		//cor = calculateCor(cov);
+		//inv = calculateInv(cor);
+		inv = calculateInv(cov);
 		determinant = calculateDet(inv);
 	}
 }
@@ -358,9 +364,9 @@ float ** TDistribution::getCov() {
 /**
  * get the correlation matrix
  */
-float ** TDistribution::getCor() {
-	return cor;
-}
+//float ** TDistribution::getCor() {
+//	return cor;
+//}
 
 /**
  * get the inverse matrix of correlation matrix

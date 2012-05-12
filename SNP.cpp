@@ -157,13 +157,14 @@ void SNP::assignData(string lineString, vector<string> _header) {
 		}
 	}
 
+	printf("start clustering SNP: %s\n", name.c_str());
 	// get good samples
 	vector<Sample> tmpVec = getGoodData();
 	initDistributions(tmpVec);
 	// cluster good samples only
 	tmpVec = mixtureModel(tmpVec);
 	// cluster all samples
-	mixtureModel(samples);
+	samples = mixtureModel(samples);
 }
 
 /**
@@ -195,7 +196,7 @@ string SNP::toString() {
 		float a = 0;
 		float b = 0;
 		char sampleOut[100];
-		if(header[i] == samples[indexSample].getName()) {
+		if(indexSample < (int)samples.size() && header[i] == samples[indexSample].getName()) {
 			a = samples[indexSample].getContrast();
 			b = samples[indexSample].getStrength();
 
@@ -265,7 +266,7 @@ void SNP::initDistributions(vector<Sample> initSample) {
 	}
 }
 
-void SNP::debug() {
+void SNP::debug(vector<Sample> sampleList) {
 	for(int i=0; i<3; i++) {
 		printf("distribution %d: %s\n", i, distributions[i].toString().c_str());
 	}
@@ -273,13 +274,13 @@ void SNP::debug() {
 	int aa = 0, bb = 0, ab = 0, nil = 0;
 	ofstream o;
 	o.open("NULL", ios::out);
-	for(unsigned int i=0; i<samples.size(); i++) {
-		int index = samples[i].getClusterIndex();
+	for(unsigned int i=0; i<sampleList.size(); i++) {
+		int index = sampleList[i].getClusterIndex();
 		if(index == 0) aa ++;
 		else if (index == 1) ab ++;
 		else if (index == 2) bb ++;
 		else {
-			o << samples[i].getContrast() << " " << samples[i].getStrength() << " 0"<< endl;
+			o << sampleList[i].getContrast() << " " << sampleList[i].getStrength() << " 0"<< endl;
 			nil ++;
 		}
 	}
@@ -289,7 +290,7 @@ void SNP::debug() {
 	distributions[1].toFile("AB");
 	distributions[2].toFile("BB");
 
-	printf("number of samples in each distribution AA: %d, AB: %d, BB: %d, NULL: %d",
+	printf("number of samples in each distribution AA: %d, AB: %d, BB: %d, NULL: %d\n",
 			aa, ab, bb, (nil + missing.size()));
 }
 
@@ -367,24 +368,33 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 
 	int iter = 0;
 	int numSamples = sampleList.size();
-	for(int i=0; i<3; i++)
-		printf("%s\n", distributions[i].toString().c_str());
+
+#if (DEBUG == 1)
+		for(int i=0; i<3; i++)
+			printf("%s\n", distributions[i].toString().c_str());
+#endif
+
+	TDistribution tmpDist[3];
+
 	while (iter < MAX_ITER) {
 		iter ++;
-		printf("================== iteration: %d ==================\n", iter);
 
-		TDistribution tmpDist[3];
+#if (DEBUG == 1)
+			printf("================== iteration: %d ==================\n", iter);
+#endif
+
+
 		for(int i=0; i<3; i++) {
 			tmpDist[i] = distributions[i];
-			tmpDist[i].removeAll();
+			distributions[i].removeAll();
 		}
 
 		// prior probabilities for distributions
 		float *priorProbs = new float[3];
-		float pa = 2 * distributions[0].getNumberOfSamples();
-		float pb = 2 * distributions[2].getNumberOfSamples();
-		pa += distributions[1].getNumberOfSamples();
-		pb += distributions[1].getNumberOfSamples();
+		float pa = 2 * tmpDist[0].getNumberOfSamples();
+		float pb = 2 * tmpDist[2].getNumberOfSamples();
+		pa += tmpDist[1].getNumberOfSamples();
+		pb += tmpDist[1].getNumberOfSamples();
 		float totp = pa + pb;
 		priorProbs[0] = (float) pa * pa / totp / totp;
 		priorProbs[1] = (float) 2 * pa * pb / totp / totp;
@@ -397,22 +407,22 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 			float currentS = tmpSample.getStrength();
 
 			// calculate the post probabilities for each sample
-			float aa = distributions[0].calculateProb(currentC, currentS);
-			float bb = distributions[2].calculateProb(currentC, currentS);
-			float ab = distributions[1].calculateProb(currentC, currentS);
+			float aa = tmpDist[0].calculateProb(currentC, currentS);
+			float bb = tmpDist[2].calculateProb(currentC, currentS);
+			float ab = tmpDist[1].calculateProb(currentC, currentS);
 			aa *= priorProbs[0];
 			ab *= priorProbs[1];
 			bb *= priorProbs[2];
 
 
-			if(currentC >= (distributions[1].locParam[0] - distributions[1].aveCDistance)) {
+			if(currentC >= (tmpDist[1].locParam[0] - tmpDist[1].aveCDistance)) {
 				bb = 0;
 			}
-			if(currentC <= (distributions[1].locParam[0] + distributions[1].aveCDistance)) {
+			if(currentC <= (tmpDist[1].locParam[0] + tmpDist[1].aveCDistance)) {
 				aa = 0;
 			}
-			if(currentC >= (distributions[0].locParam[0] - distributions[0].aveCDistance)
-				|| currentC <= (distributions[2].locParam[0] + distributions[2].aveCDistance)) {
+			if(currentC >= (tmpDist[0].locParam[0] - tmpDist[0].aveCDistance)
+				|| currentC <= (tmpDist[2].locParam[0] + tmpDist[2].aveCDistance)) {
 				ab = 0;
 			}
 
@@ -427,29 +437,31 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 
 			if(confAA >= confAB && confAA >= confBB && confAA >= THRESHOLD) {
 				sampleList[i].setClusterIndex(0);
-				samples[i].setClusterIndex(0);
-				tmpDist[0].addNewSample(sampleList[i]);
+				//samples[i].setClusterIndex(0);
+				distributions[0].addNewSample(sampleList[i]);
 			}
 			else if (confAB >= confAA && confAB >= confBB && confAB >= THRESHOLD) {
 				sampleList[i].setClusterIndex(1);
-				samples[i].setClusterIndex(1);
-				tmpDist[1].addNewSample(sampleList[i]);
+				//samples[i].setClusterIndex(1);
+				distributions[1].addNewSample(sampleList[i]);
 			}
 			else if (confBB >= confAA && confBB >= confAB && confBB >= THRESHOLD) {
 				sampleList[i].setClusterIndex(2);
-				samples[i].setClusterIndex(2);
-				tmpDist[2].addNewSample(sampleList[i]);
+				//samples[i].setClusterIndex(2);
+				distributions[2].addNewSample(sampleList[i]);
 			}
 			else {
-				samples[i].setClusterIndex(3);
+				//samples[i].setClusterIndex(3);
 				sampleList[i].setClusterIndex(3);
 			}
 		}
 
 		// update the distributions' parameters
 		for(int i=0; i<3; i++) {
-			tmpDist[i].updateParams();
-			printf("%s\n", tmpDist[i].toString().c_str());
+			distributions[i].updateParams();
+#if (DEBUG == 1)
+			printf("%s\n", distributions[i].toString().c_str());
+#endif
 		}
 
 		// compare the new distributions with the old ones
@@ -457,9 +469,9 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 		bool passAB = tmpDist[1].isEqual(distributions[1]);
 		bool passBB = tmpDist[2].isEqual(distributions[2]);
 
-		distributions[0] = tmpDist[0];
-		distributions[1] = tmpDist[1];
-		distributions[2] = tmpDist[2];
+		//distributions[0] = tmpDist[0];
+		//distributions[1] = tmpDist[1];
+		//distributions[2] = tmpDist[2];
 
 		delete[] priorProbs;
 
@@ -467,8 +479,10 @@ vector<Sample> SNP::mixtureModel(vector<Sample> sampleList) {
 		if(passAA && passAB && passBB)
 			break;
 	}
+#if (DEBUG == 1)
 	printf("==========================================\n");
-	debug();
+	debug(sampleList);
+#endif
 
 	return sampleList;
 }
